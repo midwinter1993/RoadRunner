@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -41,13 +42,13 @@ import acme.util.option.CommandLineOption;
 final class TrapInfo implements ShadowVar {
 	public AccessEvent access;
 	public Instant startTime;
-	public boolean inTrap;
+	public AtomicBoolean inTrap;
 	public ReadWriteLock lock;
 
 	public TrapInfo(AccessEvent e) {
 		this.access = e;
 		this.startTime = Instant.now();
-		this.inTrap = false;
+		this.inTrap = new AtomicBoolean(false);
 		lock = new ReentrantReadWriteLock();
 	}
 
@@ -55,14 +56,27 @@ final class TrapInfo implements ShadowVar {
 		return access.getThread();
 	}
 
-	public void setTrap(AccessEvent e) {
+	public boolean setTrap(AccessEvent e) {
+		this.lock.writeLock().lock();
+
+		if (this.inTrap.get()) {
+			// Checking data race here?
+			return false;
+		}
+
 		this.access = e;
 		this.startTime = Instant.now();
-		this.inTrap = true;
+		boolean isSuccess = this.inTrap.compareAndSet(false, true);;
+
+		Util.printf("Thread %d Attemp %s %s \n", e.getThread().getTid(), e.toString(), isSuccess);
+
+		this.lock.writeLock().unlock();
+
+		return isSuccess;
 	}
 
 	public void clearTrap() {
-		this.inTrap = false;
+		this.inTrap.set(false);;
 	}
 }
 
@@ -98,29 +112,34 @@ final public class DelayInjectionTool extends Tool {
 
 	boolean checkTrap(AccessEvent currentAccess, TrapInfo trapInfo) {
 
+		if (trapInfo.inTrap.get() == false) {
+			return true;
+		}
+
 		trapInfo.lock.readLock().lock();
 
-		if (currentAccess.getTarget() != trapInfo.access.getTarget() || trapInfo.inTrap == false) {
+		if (currentAccess.getTarget() != trapInfo.access.getTarget() ) {
 			trapInfo.lock.readLock().unlock();
 			return true;
 		}
 
 		if (currentAccess.getThread() == trapInfo.getThread()) {
-			Util.printf("BUG HERE");
+			Util.printf("BUG HERE %s %s\n", trapInfo.access.toString(), currentAccess.toString());
+			System.exit(0);
 		}
 
 		if (currentAccess.isWrite() || trapInfo.access.isWrite()) {
-			Util.printf("Data Race");
+			Util.log("Data Race");
 		}
 
 		trapInfo.lock.readLock().unlock();
-		return true;
+		return false;
 	}
 
 	boolean needTrap() {
 		Random rand = new Random();
 
-        if (rand.nextInt(100) < 20) {
+        if (rand.nextInt(100) < 5) {
 			return true;
 		} else {
 			return false;
@@ -128,20 +147,22 @@ final public class DelayInjectionTool extends Tool {
 	}
 
 	void trapOnVariable(AccessEvent currentAccess, TrapInfo trapInfo) {
-		trapInfo.lock.writeLock().lock();
-		trapInfo.setTrap(currentAccess);
-		trapInfo.lock.writeLock().unlock();
+		if (!trapInfo.setTrap(currentAccess)) {
+			return;
+		}
 
 		try {
-			TimeUnit.SECONDS.sleep(1);
+
+			Util.printf("Trap %s", currentAccess.toString());
+			// TimeUnit.SECONDS.sleep(10);
+			Thread.sleep(2000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
-		trapInfo.lock.writeLock().lock();
 		trapInfo.clearTrap();
-		trapInfo.lock.writeLock().unlock();
+		Util.printf("End trap\n");
 	}
 
 	void mbrInfer(AccessEvent currentAccess, TrapInfo trapInfo) {
@@ -162,7 +183,7 @@ final public class DelayInjectionTool extends Tool {
 			return;
 		}
 
-		if (trapInfo.inTrap) {
+		if (trapInfo.inTrap.get()) {
 			trapInfo.lock.readLock().unlock();
 			return;
 		}
@@ -262,12 +283,12 @@ final public class DelayInjectionTool extends Tool {
 
 	@Override
 	public void postJoin(JoinEvent je) {
+		Util.printf("JOIN %s\n", je.toString());
 	}
 
 	@Override
 	public void preStart(StartEvent se) {
-		Util.printf("%s\n", ">> start");
-
+		Util.printf(">> start %s\n", se.toString());
 	}
 
 	@Override
