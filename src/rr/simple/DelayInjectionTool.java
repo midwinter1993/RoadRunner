@@ -33,8 +33,8 @@ import acme.util.option.CommandLine;
 import acme.util.option.CommandLineOption;
 
 /**
- * Like LastTool, but keeps ShadowVar set to thread, so that the fast path in
- * the Instrumenter is triggered.
+ * Like LastTool, but keeps ShadowVar set to thread, so that the fast path in the Instrumenter is
+ * triggered.
  *
  * Use this only for performance tests.
  */
@@ -80,6 +80,7 @@ final class TrapInfo implements ShadowVar {
 	}
 }
 
+
 class LocalAccessSet {
 	private HashMap<Object, Instant> accessMap = new HashMap<Object, Instant>();
 
@@ -92,15 +93,17 @@ class LocalAccessSet {
 	}
 }
 
+
 @Abbrev("DI")
 final public class DelayInjectionTool extends Tool {
 
-	static final Decoration<ShadowThread, LocalAccessSet> threadAccessMap = ShadowThread.makeDecoration("Local Access Map", Type.SINGLE,
-			new DefaultValue<ShadowThread, LocalAccessSet>() {
-		public LocalAccessSet get(ShadowThread thread) {
-			return new LocalAccessSet();
-		}
-	});
+	static final Decoration<ShadowThread, LocalAccessSet> threadAccessMap =
+			ShadowThread.makeDecoration("Local Access Map", Type.SINGLE,
+					new DefaultValue<ShadowThread, LocalAccessSet>() {
+						public LocalAccessSet get(ShadowThread thread) {
+							return new LocalAccessSet();
+						}
+					});
 
 	Instant getThreadLocalAccess(ShadowThread thread, Object target) {
 		return threadAccessMap.get(thread).getAccessTime(target);
@@ -118,13 +121,13 @@ final public class DelayInjectionTool extends Tool {
 
 		trapInfo.lock.readLock().lock();
 
-		if (currentAccess.getTarget() != trapInfo.access.getTarget() ) {
+		if (currentAccess.getTarget() != trapInfo.access.getTarget()) {
 			trapInfo.lock.readLock().unlock();
 			return true;
 		}
 
 		if (currentAccess.getThread() == trapInfo.getThread()) {
-			Util.printf("BUG HERE %s %s\n", trapInfo.access.toString(), currentAccess.toString());
+			Util.logf("BUG HERE %s %s\n", trapInfo.access.toString(), currentAccess.toString());
 			System.exit(0);
 		}
 
@@ -139,7 +142,7 @@ final public class DelayInjectionTool extends Tool {
 	boolean needTrap() {
 		Random rand = new Random();
 
-        if (rand.nextInt(100) < 5) {
+		if (rand.nextInt(100) < 5) {
 			return true;
 		} else {
 			return false;
@@ -168,8 +171,8 @@ final public class DelayInjectionTool extends Tool {
 	void mbrInfer(AccessEvent currentAccess, TrapInfo trapInfo) {
 		trapInfo.lock.readLock().lock();
 
-		Instant lastAccessTime = getThreadLocalAccess(currentAccess.getThread(),
-													  currentAccess.getTarget());
+		Instant lastAccessTime =
+				getThreadLocalAccess(currentAccess.getThread(), currentAccess.getTarget());
 		if (lastAccessTime == null) {
 			trapInfo.lock.readLock().unlock();
 			return;
@@ -189,7 +192,8 @@ final public class DelayInjectionTool extends Tool {
 		}
 
 		if (lastAccessTime.compareTo(trapInfo.startTime) < 0) {
-			Util.printf("May-HB\n");
+			Util.printf("May-HB: %s -> %s\n", trapInfo.access.getAccessInfo().toString(),
+					currentAccess.getAccessInfo().toString());
 		}
 
 		trapInfo.lock.readLock().unlock();
@@ -225,7 +229,7 @@ final public class DelayInjectionTool extends Tool {
 
 	@Override
 	public final void access(AccessEvent fae) {
-		Util.printf("%s\n", fae.toString());
+		// Util.printf("%s\n", fae.toString());
 
 		onEvent(fae);
 	}
@@ -304,14 +308,10 @@ final public class DelayInjectionTool extends Tool {
 	}
 
 	/*
-	public static boolean readFastPath(ShadowVar vs, ShadowThread ts) {
-		Util.printf("FAST R\n");
-
-		return true;
-	}
-
-	public static boolean writeFastPath(ShadowVar vs, ShadowThread ts) {
-		return true;
-	}
-	*/
+	 * public static boolean readFastPath(ShadowVar vs, ShadowThread ts) { Util.printf("FAST R\n");
+	 *
+	 * return true; }
+	 *
+	 * public static boolean writeFastPath(ShadowVar vs, ShadowThread ts) { return true; }
+	 */
 }
