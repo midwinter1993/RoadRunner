@@ -154,15 +154,15 @@ final public class DelayInjectionTool extends Tool {
 			return;
 		}
 
-		try {
+		// try {
 
-			Util.printf("Trap %s", currentAccess.toString());
+			// Util.printf("Trap %s", currentAccess.toString());
 			// TimeUnit.SECONDS.sleep(10);
-			Thread.sleep(2000);
-		} catch (InterruptedException e) {
+			// Thread.sleep(2000);
+		// } catch (InterruptedException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+			// e.printStackTrace();
+		// }
 
 		trapInfo.clearTrap();
 		Util.printf("End trap\n");

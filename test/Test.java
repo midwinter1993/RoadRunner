@@ -48,6 +48,8 @@ public class Test extends Thread{
 	y++;
     }
 
+    private int abc = 0;
+
 	@Override
 	public void run() {
 		for (int i = 0; i < ITERS; i++) {

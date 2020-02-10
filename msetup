@@ -37,8 +37,9 @@
 
 # These two lines are for OS X, to set the max memory to just under
 # the total machine memory
-GIGS=`system_profiler SPHardwareDataType | grep Memory | cut -f2 -d: | cut -f1 -dG | sed -e "s/ //g" `
-export JVM_ARGS="-Xmx${GIGS}g -Xms1g"
+# GIGS=`system_profiler SPHardwareDataType | grep Memory | cut -f2 -d: | cut -f1 -dG | sed -e "s/ //g" `
+# export JVM_ARGS="-Xmx${GIGS}g -Xms1g"
+export JVM_ARGS="-Xmx10g -Xms1g"
 
 
 export PATH=${PATH}:`pwd`/auto/bin:`pwd`/bin
