@@ -9,6 +9,7 @@
 
 #include "utils.h"
 #include "wrapper.h"
+#include "shadow.h"
 
 // static jrawMonitorID vmtrace_lock;
 
@@ -68,12 +69,17 @@ void JNICALL cbFieldAccess(
     utils::rel_big_lock(jvmti);
 }
 
+//
+// Provide a global variable for easy access
+//
+jvmtiEnv* g_jvmti = NULL;
+
 JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
+    vm->GetEnv((void**) &g_jvmti, JVMTI_VERSION_1_0);
 
-    jvmtiEnv* jvmti;
-    vm->GetEnv((void**) &jvmti, JVMTI_VERSION_1_0);
-
+    jvmtiEnv *jvmti = g_jvmti;
     utils::init(jvmti, options);
+    ShadowVar::jvmti = g_jvmti;
 
     //
     // Register our capabilities

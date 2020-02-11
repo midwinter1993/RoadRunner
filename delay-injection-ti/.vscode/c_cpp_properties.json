@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${JAVA_HOME}/include",
-                "${JAVA_HOME}/include/linux"
+                "${JAVA_HOME}/include/linux",
+                "${JAVA_HOME}/include/darwin"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",

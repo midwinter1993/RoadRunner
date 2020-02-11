@@ -1,6 +1,6 @@
 CXX=g++
 CXXSUFFIX=cpp
-CXXFLAGS = -fPIC -g -ggdb -std=c++11 -I./include -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
+CXXFLAGS = -fPIC -g -ggdb -std=c++11 -I./include -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux -I$(JAVA_HOME)/include/darwin
 LDFLAGS=
 
 SOURCES=$(shell find . -name "*.$(CXXSUFFIX)")

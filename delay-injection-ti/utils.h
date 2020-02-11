@@ -1,5 +1,5 @@
 #if !defined(__UTILS_H__)
-#define MACRO__UTILS_H__
+#define __UTILS_H__
 
 #include <jvmti.h>
 
@@ -19,4 +19,4 @@ namespace utils {
     void rel_big_lock(jvmtiEnv *jvmti);
 }
 
-#endif // MACRO__UTILS_H__
+#endif // __UTILS_H__
