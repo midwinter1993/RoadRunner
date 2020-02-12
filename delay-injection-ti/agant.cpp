@@ -80,6 +80,17 @@ void JNICALL cbFieldAccess(
     utils::rel_big_lock(jvmti);
 }
 
+void JNICALL cbMethodEntry(
+    jvmtiEnv *jvmti,
+    JNIEnv* jni_env,
+    jthread thread,
+    jmethodID method) {
+
+    MethodName mn(jvmti, method);
+
+    // utils::trace(jvmti, "$>> Enter %s", mn.name());
+}
+
 //
 // Provide a global variable for easy access
 //
@@ -100,6 +111,9 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
     cap.can_generate_all_class_hook_events = 1;
     cap.can_generate_field_modification_events = 1;
     cap.can_generate_field_access_events = 1;
+    cap.can_generate_method_entry_events = 1;
+    cap.can_get_source_file_name = 1;
+    cap.can_get_line_numbers = 1;
 
     jvmtiError err_code = jvmti->AddCapabilities(&cap);
     CHECK_ERROR("Add capability failure");
@@ -113,6 +127,7 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
     callbacks.ThreadEnd = ThreadEnd;
     callbacks.ClassPrepare = cbClassPrepare;
     callbacks.FieldAccess = cbFieldAccess;
+    callbacks.MethodEntry = cbMethodEntry;
 
     jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     CHECK_ERROR("Set callbacks failure");
@@ -122,8 +137,9 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
     //
     jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL);
     jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_END, NULL);
-    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL);
-    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_ACCESS, NULL);
+    // jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL);
+    // jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_ACCESS, NULL);
+    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, NULL);
     CHECK_ERROR("Set event notifications failure");
 
     return 0;

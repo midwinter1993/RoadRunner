@@ -44,4 +44,6 @@ fi
 
 echo rrrun -classpath=original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}
 
-# rrrun -classpath=original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}
+rrrun -classpath=original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}
+
+# ./TEST -noxml -quiet -noTidGC -tool=DI

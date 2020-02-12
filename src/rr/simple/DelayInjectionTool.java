@@ -11,6 +11,9 @@ import rr.event.ReleaseEvent;
 import rr.event.SleepEvent;
 import rr.event.StartEvent;
 import rr.event.WaitEvent;
+import rr.meta.InvokeInfo;
+import rr.meta.SourceLocation;
+import rr.event.MethodEvent;
 import rr.state.ShadowThread;
 import rr.state.ShadowVar;
 import rr.tool.Tool;
@@ -21,6 +24,8 @@ import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -39,107 +44,81 @@ import acme.util.option.CommandLineOption;
  * Use this only for performance tests.
  */
 
-final class TrapInfo implements ShadowVar {
-	public AccessEvent access;
-	public Instant startTime;
-	public AtomicBoolean inTrap;
-	public ReadWriteLock lock;
+final class MethodCallInfo {
+	public Instant tsc;
+	public int tid;
+	public InvokeInfo info;
+	// public SourceLocation loc;
+	public MethodCallInfo lastDelayedCall;
+	public String methodInfo;
 
-	public TrapInfo(AccessEvent e) {
-		this.access = e;
-		this.startTime = Instant.now();
-		this.inTrap = new AtomicBoolean(false);
-		lock = new ReentrantReadWriteLock();
+	public MethodCallInfo() {
+		tsc = Instant.now();
+		tid = -1;
+		// loc = null;
+		info = null;
+		lastDelayedCall = null;
+		methodInfo = null;
 	}
 
-	public ShadowThread getThread() {
-		return access.getThread();
+	public MethodCallInfo(MethodEvent me) {
+		this(me, null);
 	}
 
-	public boolean setTrap(AccessEvent e) {
-		this.lock.writeLock().lock();
+	public MethodCallInfo(MethodEvent me, MethodCallInfo last) {
+		tsc = Instant.now();
+		tid = me.getThread().getTid();
+		info = me.getInvokeInfo();
+		lastDelayedCall = last;
+		methodInfo = me.toString();
+	}
 
-		if (this.inTrap.get()) {
-			// Checking data race here?
-			return false;
+	public String toString() {
+		if (info != null) {
+			return info.toString();
+		} else {
+			// return "Unknown";
+			return methodInfo;
 		}
-
-		this.access = e;
-		this.startTime = Instant.now();
-		boolean isSuccess = this.inTrap.compareAndSet(false, true);;
-
-		Util.printf("Thread %d Attemp %s %s \n", e.getThread().getTid(), e.toString(), isSuccess);
-
-		this.lock.writeLock().unlock();
-
-		return isSuccess;
 	}
 
-	public void clearTrap() {
-		this.inTrap.set(false);;
+	public int getTid() {
+		return tid;
 	}
 }
-
-
-class LocalAccessSet {
-	private HashMap<Object, Instant> accessMap = new HashMap<Object, Instant>();
-
-	public Instant getAccessTime(Object target) {
-		return accessMap.get(target);
-	}
-
-	public void putAccessTime(Object target, Instant instant) {
-		accessMap.put(target, instant);
-	}
-}
-
 
 @Abbrev("DI")
 final public class DelayInjectionTool extends Tool {
 
-	static final Decoration<ShadowThread, LocalAccessSet> threadAccessMap =
+	static final Decoration<ShadowThread, MethodCallInfo> threadLastCalls =
 			ShadowThread.makeDecoration("Local Access Map", Type.SINGLE,
-					new DefaultValue<ShadowThread, LocalAccessSet>() {
-						public LocalAccessSet get(ShadowThread thread) {
-							return new LocalAccessSet();
+					new DefaultValue<ShadowThread, MethodCallInfo>() {
+						public MethodCallInfo get(ShadowThread thread) {
+							return new MethodCallInfo();
 						}
 					});
 
-	Instant getThreadLocalAccess(ShadowThread thread, Object target) {
-		return threadAccessMap.get(thread).getAccessTime(target);
+	static AtomicReference<MethodCallInfo> lastDelayedCall = new AtomicReference<MethodCallInfo>();
+	static AtomicInteger numberOfThreads = new AtomicInteger(1);
+
+	MethodCallInfo getThreadLastCall(ShadowThread thread) {
+		return threadLastCalls.get(thread);
 	}
 
-	void putThreadLocalAccess(ShadowThread thread, Object target, Instant instant) {
-		threadAccessMap.get(thread).putAccessTime(target, instant);
-	}
+	void putThreadCall(ShadowThread thread, MethodEvent me) {
+		MethodCallInfo lastCall = lastDelayedCall.get();
 
-	boolean checkTrap(AccessEvent currentAccess, TrapInfo trapInfo) {
-
-		if (trapInfo.inTrap.get() == false) {
-			return true;
+		if (lastCall == null || lastCall.getTid() == thread.getTid()) {
+			threadLastCalls.set(thread, new MethodCallInfo(me, null));
+		} else {
+			threadLastCalls.set(thread, new MethodCallInfo(me, lastCall));
 		}
-
-		trapInfo.lock.readLock().lock();
-
-		if (currentAccess.getTarget() != trapInfo.access.getTarget()) {
-			trapInfo.lock.readLock().unlock();
-			return true;
-		}
-
-		if (currentAccess.getThread() == trapInfo.getThread()) {
-			Util.logf("BUG HERE %s %s\n", trapInfo.access.toString(), currentAccess.toString());
-			System.exit(0);
-		}
-
-		if (currentAccess.isWrite() || trapInfo.access.isWrite()) {
-			Util.log("Data Race");
-		}
-
-		trapInfo.lock.readLock().unlock();
-		return false;
 	}
 
 	boolean needTrap() {
+		if (numberOfThreads.get() < 2) {
+			return false;
+		}
 		Random rand = new Random();
 
 		if (rand.nextInt(100) < 5) {
@@ -149,68 +128,50 @@ final public class DelayInjectionTool extends Tool {
 		}
 	}
 
-	void trapOnVariable(AccessEvent currentAccess, TrapInfo trapInfo) {
-		if (!trapInfo.setTrap(currentAccess)) {
-			return;
+	void threadTrap(MethodEvent me) {
+		lastDelayedCall.set(new MethodCallInfo(me));
+		try {
+			Util.printf("Trap %s", me.toString());
+			// TimeUnit.SECONDS.sleep(10);
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
-		// try {
-
-			// Util.printf("Trap %s", currentAccess.toString());
-			// TimeUnit.SECONDS.sleep(10);
-			// Thread.sleep(2000);
-		// } catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			// e.printStackTrace();
-		// }
-
-		trapInfo.clearTrap();
-		Util.printf("End trap\n");
+		Util.printf("%s End trap\n", me.toString());
 	}
 
-	void mbrInfer(AccessEvent currentAccess, TrapInfo trapInfo) {
-		trapInfo.lock.readLock().lock();
+	void mbrInfer(MethodEvent me) {
+		MethodCallInfo lastCall = getThreadLastCall(me.getThread());
 
-		Instant lastAccessTime =
-				getThreadLocalAccess(currentAccess.getThread(), currentAccess.getTarget());
-		if (lastAccessTime == null) {
-			trapInfo.lock.readLock().unlock();
+		if (lastCall == null) {
 			return;
 		}
 
-		Instant currentTime = Instant.now();
-		Duration duration = Duration.between(lastAccessTime, currentTime);
+		Instant currentTsc = Instant.now();
+		Duration duration = Duration.between(lastCall.tsc, currentTsc);
 
 		if (duration.getSeconds() < 1) {
-			trapInfo.lock.readLock().unlock();
 			return;
 		}
 
-		if (trapInfo.inTrap.get()) {
-			trapInfo.lock.readLock().unlock();
-			return;
+		if (lastCall.lastDelayedCall != null) {
+			Util.printf("May-HB: %s -> %s\n", lastCall.lastDelayedCall.toString(),
+					lastCall.toString());
 		}
-
-		if (lastAccessTime.compareTo(trapInfo.startTime) < 0) {
-			Util.printf("May-HB: %s -> %s\n", trapInfo.access.getAccessInfo().toString(),
-					currentAccess.getAccessInfo().toString());
-		}
-
-		trapInfo.lock.readLock().unlock();
 	}
 
-	void onEvent(AccessEvent e) {
-		TrapInfo trapInfo = (TrapInfo) e.getShadow();
-		if (!checkTrap(e, trapInfo)) {
-			putThreadLocalAccess(e.getThread(), e.getTarget(), Instant.now());
-			return;
+	void onMethodEvent(MethodEvent me) {
+		if (me.getInvokeInfo() != null) {
+			Util.printf(">>> %s", me.getInvokeInfo().toString());
 		}
 		if (needTrap()) {
-			trapOnVariable(e, trapInfo);
+			threadTrap(me);
 		} else {
-			mbrInfer(e, trapInfo);
+			mbrInfer(me);
 		}
-		putThreadLocalAccess(e.getThread(), e.getTarget(), Instant.now());
+		putThreadCall(me.getThread(), me);
 	}
 
 	@Override
@@ -227,85 +188,33 @@ final public class DelayInjectionTool extends Tool {
 		super(name, next, commandLine);
 	}
 
-	@Override
-	public final void access(AccessEvent fae) {
-		// Util.printf("%s\n", fae.toString());
+	// @Override
+	// public final void access(AccessEvent fae) {
+	// 	// Util.printf("%s\n", fae.toString());
 
-		onEvent(fae);
-	}
+	// 	onEvent(fae);
+	// }
 
 	// Does not handle enter/exit, so that the instrumentor won't instrument method
 	// invocations.
-	// public void enter(MethodEvent me) {}
+	public void enter(MethodEvent me) {
+		onMethodEvent(me);
+	}
+
 	// public void exit(MethodEvent me) {}
 
 	@Override
-	public void acquire(AcquireEvent ae) {
-	}
-
-	@Override
-	public void release(ReleaseEvent re) {
-	}
-
-	@Override
-	public boolean testAcquire(AcquireEvent ae) {
-		return true;
-	}
-
-	@Override
-	public boolean testRelease(ReleaseEvent re) {
-		return true;
-	}
-
-	@Override
-	public void preWait(WaitEvent we) {
-	}
-
-	@Override
-	public void postWait(WaitEvent we) {
-	}
-
-	@Override
-	public void preNotify(NotifyEvent ne) {
-	}
-
-	@Override
-	public void postNotify(NotifyEvent ne) {
-	}
-
-	@Override
-	public void preSleep(SleepEvent e) {
-	}
-
-	@Override
-	public void postSleep(SleepEvent e) {
-	}
-
-	@Override
-	public void preJoin(JoinEvent je) {
+	public void postStart(StartEvent se) {
+		Util.printf(">> start %s\n", se.toString());
+		numberOfThreads.incrementAndGet();
 	}
 
 	@Override
 	public void postJoin(JoinEvent je) {
 		Util.printf("JOIN %s\n", je.toString());
+		numberOfThreads.decrementAndGet();
 	}
 
-	@Override
-	public void preStart(StartEvent se) {
-		Util.printf(">> start %s\n", se.toString());
-	}
-
-	@Override
-	public void postStart(StartEvent se) {
-	}
-
-	@Override
-	public void interrupted(InterruptedEvent e) {
-	}
-
-	@Override
-	public void preInterrupt(InterruptEvent me) {
-	}
 
 	/*
 	 * public static boolean readFastPath(ShadowVar vs, ShadowThread ts) { Util.printf("FAST R\n");

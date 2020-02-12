@@ -1,14 +1,14 @@
 #!/bin/bash
 #
 # Copyright (c) 2016, Cormac Flanagan (University of California, Santa Cruz)
-#                     and Stephen Freund (Williams College) 
+#                     and Stephen Freund (Williams College)
 #
-# All rights reserved.  
-# 
+# All rights reserved.
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
 # met:
-# 
+#
 #    * Redistributions of source code must retain the above copyright
 #      notice, this list of conditions and the following disclaimer.
 #
@@ -50,4 +50,6 @@ SPECIAL="-maxTid=8 -classes=-org.python.antlr.PythonParser.* -classes=-antlr.Pre
 
 echo rrrun ${SPECIAL} -classpath=original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}
 
+# java -cp original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}
+# java -agentpath:../../delay-injection-ti/x.so -cp original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}
 rrrun ${SPECIAL} -classpath=original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}

@@ -29,7 +29,7 @@ Target::Target(jobject object, jfieldID field, jclass field_klass)
 
 // ===============================================
 
-Accessor::Accessor(): Accessor(NULL, NULL, NULL) {
+Accessor::Accessor(): Accessor(NULL, NULL, 0) {
 
 }
 
