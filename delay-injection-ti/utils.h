@@ -2,6 +2,7 @@
 #define __UTILS_H__
 
 #include <jvmti.h>
+#include <cstdint>
 
 void check_jvmti_error(jvmtiEnv *jvmti, jvmtiError errnum, const char *str);
 
@@ -17,6 +18,8 @@ namespace utils {
 
     void acq_big_lock(jvmtiEnv *jvmti);
     void rel_big_lock(jvmtiEnv *jvmti);
+
+    uint64_t hash_object(JNIEnv *env, jobject object);
 }
 
 #endif // __UTILS_H__

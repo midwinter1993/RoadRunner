@@ -9,6 +9,7 @@
 typedef std::chrono::high_resolution_clock Clock;
 typedef std::chrono::time_point<Clock> Timestamp;
 
+
 class Target {
 public:
     Target(jobject object, jfieldID field, jclass field_klass);

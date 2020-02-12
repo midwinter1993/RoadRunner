@@ -63,8 +63,19 @@ void JNICALL cbFieldAccess(
     FieldName fn(jvmti, field_klass, field);
 
     std::thread::id this_id = std::this_thread::get_id();
-    std::cerr << this_id << "\n";
+    // std::cerr << this_id << "\n";
     utils::trace(jvmti, "ACCESS Field %s", fn.get_name().c_str());
+
+    if (object) {
+        //
+        // Field access
+        //
+        utils::trace(jvmti, "$ %p obj: %lu", object, utils::hash_object(jni_env, object));
+    } else {
+        //
+        // Static access
+        //
+    }
 
     utils::rel_big_lock(jvmti);
 }

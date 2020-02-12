@@ -19,6 +19,24 @@ void check_jvmti_error(jvmtiEnv *jvmti, jvmtiError errnum, const char *str) {
 
 namespace utils {
 
+uint64_t hash_object(JNIEnv *env, jobject object) {
+    jclass cls = env->FindClass("java/lang/System");
+    if (!cls) {
+        printf("Find class `System` failure\n");
+        return 0;
+    }
+
+    jmethodID method = env->GetStaticMethodID(cls, "identityHashCode", "(Ljava/lang/Object;)I");
+    if (!method) {
+        printf("Get method `identityHashCode` failure\n");
+    }
+
+    jint hash = env->CallStaticIntMethod(cls, method, object);
+
+    return hash;
+}
+
+
 void trace(jvmtiEnv* jvmti, const char* fmt, ...) {
     jlong current_time;
     jvmti->GetTime(&current_time);
