@@ -1,39 +1,33 @@
 /******************************************************************************
-
-Copyright (c) 2010, Cormac Flanagan (University of California, Santa Cruz)
-                    and Stephen Freund (Williams College) 
-
-All rights reserved.  
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
- * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-
- * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-
- * Neither the names of the University of California, Santa Cruz
-      and Williams College nor the names of its contributors may be
-      used to endorse or promote products derived from this software
-      without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+ *
+ * Copyright (c) 2010, Cormac Flanagan (University of California, Santa Cruz) and Stephen Freund
+ * (Williams College)
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+ *
+ * Redistributions of source code must retain the above copyright notice, this list of conditions
+ * and the following disclaimer.
+ *
+ * Redistributions in binary form must reproduce the above copyright notice, this list of conditions
+ * and the following disclaimer in the documentation and/or other materials provided with the
+ * distribution.
+ *
+ * Neither the names of the University of California, Santa Cruz and Williams College nor the names
+ * of its contributors may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ * FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
+ * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  ******************************************************************************/
 
 package rr.state.agent;
@@ -50,7 +44,7 @@ import rr.org.objectweb.asm.ClassVisitor;
 import rr.org.objectweb.asm.ClassWriter;
 import rr.org.objectweb.asm.MethodVisitor;
 import rr.org.objectweb.asm.Opcodes;
-
+import rr.loader.InstrumentingDefineClassLoader;
 import rr.loader.Loader;
 import acme.util.Assert;
 import acme.util.Util;
@@ -58,16 +52,35 @@ import acme.util.Util;
 public class StateExtensionTransformer implements ClassFileTransformer {
 
 	private DefineClassListener hook;
-	
+
 	public byte[] transform(ClassLoader definingLoader, String className,
 			Class<?> classBeingRedefined, ProtectionDomain protectionDomain,
 			byte[] bytes) throws IllegalClassFormatException {
 
+        if (className.startsWith("java/util/concurrent/locks")) {
+			System.err.println(">>>>>>>>>>>>>>>>>>>>>> HERE "+ className);
+			System.err.println(hook == null ? "hook NULL" : "hook NONNULL");
+
+			if (hook != null) {
+				System.out.println("---------------------??INSTRU");
+				return hook.define(definingLoader, className, bytes);
+			} else {
+				byte[] ret = new InstrumentingDefineClassLoader().define(definingLoader, className, bytes);
+				System.out.println("---------------------INSTRU");
+				return ret;
+			}
+		}
+
 		if (!(className.startsWith("rr/") || className.startsWith("tools/") || className.startsWith("java/") || className.startsWith("acme/") || className.startsWith("sun/"))) {
+
+			// System.err.println(">>>>>>>>>>>>>>>>>>>>>> HERE "+ className);
+			// System.err.println(hook == null ? "hook NULL" : "hook NONNULL");
+
 			if (hook != null) {
 				return hook.define(definingLoader, className, bytes);
 			}
 		}
+
 
 		if (ThreadStateExtensionAgent.noDecorationInline.get()) {
 			return null;
@@ -78,10 +91,12 @@ public class StateExtensionTransformer implements ClassFileTransformer {
 					classBeingRedefined, protectionDomain,
 					bytes);
 		} else if (classesToTransform.contains(className)) {
+
 			return transformHelper(definingLoader, className,
 					classBeingRedefined, protectionDomain,
 					bytes);
 		} else {
+
 			return null;
 		}
 	}
@@ -91,7 +106,7 @@ public class StateExtensionTransformer implements ClassFileTransformer {
 
 	public void addField(ThreadStateFieldExtension f) {
 		for (ThreadStateFieldExtension o : fields) {
-			if (o.name.equals(f.name)) { 
+			if (o.name.equals(f.name)) {
 				Assert.warn("Potential ThreadState field extension name clash: '%s'", o.name);
 			}
 		}
@@ -112,11 +127,11 @@ public class StateExtensionTransformer implements ClassFileTransformer {
 			for (ThreadStateFieldExtension f : fields) {
 				if (f.owner.equals(className)) {
 					Util.log("Adding field " + f.name + " to " + f.owner + " (" + f.origin + ")");
-					this.visitField(Opcodes.ACC_PUBLIC, f.name + "_" + f.origin.replace("/", "_"), f.desc, null, null);					
+					this.visitField(Opcodes.ACC_PUBLIC, f.name + "_" + f.origin.replace("/", "_"), f.desc, null, null);
 				}
 			}
 			super.visitEnd();
-		}		
+		}
 	}
 
 
@@ -125,7 +140,7 @@ public class StateExtensionTransformer implements ClassFileTransformer {
 			byte[] classfileBuffer) {
 		Util.log("Transforming " + className);
 		try {
-			ClassReader cr = new ClassReader(classfileBuffer); 
+			ClassReader cr = new ClassReader(classfileBuffer);
 			ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 			ClassVisitor cv = new ThreadStateClassVisitor(cw, className);
 			cr.accept(cv, 0);
@@ -164,7 +179,7 @@ public class StateExtensionTransformer implements ClassFileTransformer {
 						} else if (name.equals("ts_set_" + f.name)) {
 							super.visitFieldInsn(PUTFIELD, f.owner, f.name + "_" + f.origin.replace("/", "_"), f.desc);
 							return;
-						} 
+						}
 				//	}
 				}
 			//}
@@ -193,11 +208,11 @@ public class StateExtensionTransformer implements ClassFileTransformer {
 			for (ThreadStateFieldExtension f : fields) {
 				if (f.owner.equals(className)) {
 					Util.log("Adding field " + f.name + " to " + f.owner  + " (" + f.origin + ")");
-					this.visitField(Opcodes.ACC_PUBLIC, f.name + "_" + f.origin.replace("/", "_"), f.desc, null, null);					
+					this.visitField(Opcodes.ACC_PUBLIC, f.name + "_" + f.origin.replace("/", "_"), f.desc, null, null);
 				}
 			}
 			super.visitEnd();
-		}		
+		}
 	}
 
 	private byte[] transformHelper(ClassLoader loader, String className,
@@ -205,7 +220,7 @@ public class StateExtensionTransformer implements ClassFileTransformer {
 			byte[] classfileBuffer) {
 		Util.log("Transforming " + className);
 		try {
-			ClassReader cr = new ClassReader(classfileBuffer); 
+			ClassReader cr = new ClassReader(classfileBuffer);
 			ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 			ClassVisitor cv = new WatchedClassVisitor(cw, className);
 			cr.accept(cv, 0);
@@ -214,7 +229,7 @@ public class StateExtensionTransformer implements ClassFileTransformer {
 			Util.log("done");
 			return b;
 		} catch (Exception e) {
-			Assert.panic(e); 
+			Assert.panic(e);
 			return null;
 		}
 	}

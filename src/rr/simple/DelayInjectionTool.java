@@ -176,12 +176,12 @@ final public class DelayInjectionTool extends Tool {
 
 	@Override
 	public ShadowVar makeShadowVar(AccessEvent fae) {
-		return new TrapInfo(fae);
+		return fae.getThread();
 	}
 
 	@Override
 	public String toString() {
-		return "Empty";
+		return "Delay Injection";
 	}
 
 	public DelayInjectionTool(String name, Tool next, CommandLine commandLine) {

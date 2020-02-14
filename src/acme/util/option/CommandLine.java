@@ -1,9 +1,9 @@
 /******************************************************************************
 
 Copyright (c) 2010, Cormac Flanagan (University of California, Santa Cruz)
-                    and Stephen Freund (Williams College) 
+                    and Stephen Freund (Williams College)
 
-All rights reserved.  
+All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -47,6 +47,7 @@ import java.util.Scanner;
 import java.util.Vector;
 
 import acme.util.Assert;
+import acme.util.XLog;
 import acme.util.Debug;
 import acme.util.StringMatchResult;
 import acme.util.StringMatcher;
@@ -64,7 +65,7 @@ public class CommandLine {
 	public static final Option<String> javaArgs = new Option<String>("javaArgs", "");
 
 	private Vector<CommandLineOption<?>> flags = new Vector<CommandLineOption<?>>();
-	private final String requiredPart; 
+	private final String requiredPart;
 	private final String commandName;
 
 	private ArrayList<String> usageInfo = new ArrayList<String>();
@@ -169,7 +170,7 @@ public class CommandLine {
 	 * @param k   indicates whether the option is stable or not
 	 * @param r   runs this Runnable when the flag is encountered
 	 * @param usage  describes the option
-	 */	
+	 */
 	public static CommandLineOption<Long> makeLong(String id, long dV, CommandLineOption.Kind k, String usage, final Runnable r) {
 		return new CommandLineOption<Long>(id,dV,true,k,usage) {
 			@Override
@@ -223,7 +224,7 @@ public class CommandLine {
 	 * @param k   indicates whether the option is stable or not
 	 * @param r   runs this Runnable when the flag is encountered
 	 * @param usage  describes the option
-	 */	
+	 */
 	public static CommandLineOption<String> makeString(String id, String dV, CommandLineOption.Kind k, String usage, final Runnable r) {
 		return new CommandLineOption<String>(id,dV,true,k,usage) {
 			@Override
@@ -240,13 +241,13 @@ public class CommandLine {
 	 * @param id  keyword for the flag.  Set with -id=X
 	 * @param k   indicates whether the option is stable or not
 	 * @param usage  describes the option
-	 */	
+	 */
 	public static CommandLineOption<ArrayList<String>> makeStringList(String id, CommandLineOption.Kind k, String usage) {
 		return new CommandLineOption<ArrayList<String>>(id,new ArrayList<String>(),true,k,usage) {
 			@Override
 			protected void apply(String arg) {
 				this.get().add(arg);
-			}		
+			}
 			@Override
 			protected String getType() {
 				return "String";
@@ -304,7 +305,7 @@ public class CommandLine {
 	 * @param usage  describes the option
 	 * @param choices The string to choose among
 	 */
-	public static CommandLineOption<Integer> 
+	public static CommandLineOption<Integer>
 	makeStringChoice(final String id, String initial, CommandLineOption.Kind k, String usage, final String... choices) {
 		for (int i = 0; i < choices.length; i++) {
 			if (initial.equals(choices[i])) {
@@ -318,7 +319,7 @@ public class CommandLine {
 							}
 						}
 						Assert.fail("Invalid choice for " + id + ". Must be one of: " + Arrays.toString(choices));
-					}	
+					}
 					@Override
 					protected String rep() {
 						return choices[get()] + "("+get()+")";
@@ -339,10 +340,10 @@ public class CommandLine {
 	 * @param usage
 	 * @param initialArgs
 	 */
-	public static CommandLineOption<StringMatcher> makeStringMatcher(String id, final StringMatchResult defaultResult, 
+	public static CommandLineOption<StringMatcher> makeStringMatcher(String id, final StringMatchResult defaultResult,
 			CommandLineOption.Kind k, String usage, final String... initialArgs) {
 		CommandLineOption<StringMatcher> tmp = new CommandLineOption<StringMatcher>(id, new StringMatcher(defaultResult), true, k, usage) {
-			private final int defaultLen = initialArgs.length; 
+			private final int defaultLen = initialArgs.length;
 			@Override
 			protected void apply(String arg) {
 				char ch = arg.charAt(0);
@@ -360,21 +361,21 @@ public class CommandLine {
 			tmp.get().add(arg);
 		}
 		return tmp;
-	}	
+	}
 
 
 
 	/**
 	 * Add an option to this command line processor.
 	 */
-	public <T> void add(CommandLineOption<T> c) { 
+	public <T> void add(CommandLineOption<T> c) {
 
 		String flag = c.getId();
 		for (CommandLineOption<?> clo : flags) {
 			if (clo.getId().equals(flag)) {
 				Assert.warn("Multiple Options with same flag: '%s'", flag);
 				break;
-			} 
+			}
 		}
 
 		flags.add(c);
@@ -418,11 +419,11 @@ public class CommandLine {
 		add(Debug.debugKeysOption);
 		add(Util.quietOption);
 		add(Util.logDepthOption);
-		add(Util.outputPathOption); 
-		add(Util.outputFileOption); 
-		add(Util.errorFileOption); 
+		add(Util.outputPathOption);
+		add(Util.outputFileOption);
+		add(Util.errorFileOption);
 		add(Yikes.maxYikesOption);
-
+		add(XLog.outputFileOption);
 	}
 
 
@@ -496,7 +497,7 @@ public class CommandLine {
 		return n;
 	}
 
-	private int applyHelper(String args[], int firstArg) { 
+	private int applyHelper(String args[], int firstArg) {
 		Vector<CommandLineOption<?>> processed = new Vector<CommandLineOption<?>>();
 
 		while (firstArg < args.length) {
@@ -523,10 +524,10 @@ public class CommandLine {
 						}
 						processed.add(clo);
 						clo.checkAndApply(arg);
-					} 
+					}
 				}
 				if (!found) {
-					Assert.fail("Unrecognized Option: %s.", flag);					
+					Assert.fail("Unrecognized Option: %s.", flag);
 				}
 			} else {
 				break;
