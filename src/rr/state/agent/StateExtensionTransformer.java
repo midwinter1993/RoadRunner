@@ -57,25 +57,14 @@ public class StateExtensionTransformer implements ClassFileTransformer {
 			Class<?> classBeingRedefined, ProtectionDomain protectionDomain,
 			byte[] bytes) throws IllegalClassFormatException {
 
-        if (className.startsWith("java/util/concurrent/locks")) {
-			System.err.println(">>>>>>>>>>>>>>>>>>>>>> HERE "+ className);
-			System.err.println(hook == null ? "hook NULL" : "hook NONNULL");
-
-			if (hook != null) {
-				System.out.println("---------------------??INSTRU");
-				return hook.define(definingLoader, className, bytes);
-			} else {
-				byte[] ret = new InstrumentingDefineClassLoader().define(definingLoader, className, bytes);
-				System.out.println("---------------------INSTRU");
-				return ret;
-			}
-		}
+		// System.err.println(">>>>>>>>>>>>>>>>>>>>>> LOAD" + className);
+		// if (className.startsWith("test") ||
+			// className.startsWith("java/util/concurrent/locks")) {
+			// Util.printf(">>>>>>>>>>>>>>>>>>>>>> HERE "+ className);
+			// Util.printf("%s", hook == null ? "hook NULL" : "hook NONNULL");
+		// }
 
 		if (!(className.startsWith("rr/") || className.startsWith("tools/") || className.startsWith("java/") || className.startsWith("acme/") || className.startsWith("sun/"))) {
-
-			// System.err.println(">>>>>>>>>>>>>>>>>>>>>> HERE "+ className);
-			// System.err.println(hook == null ? "hook NULL" : "hook NONNULL");
-
 			if (hook != null) {
 				return hook.define(definingLoader, className, bytes);
 			}

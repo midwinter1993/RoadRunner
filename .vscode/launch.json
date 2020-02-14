@@ -1,0 +1,155 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Debug (Launch) - XXX",
+            "request": "launch",
+            "mainClass": "rr.RRMain",
+            "vmArgs": "-javaagent:/Users/cdj/tmp/RoadRunner/build/jar/rragent.jar -Xmx10g -Xms1g -Xbootclasspath/p:/Users/cdj/tmp/RoadRunner/classes:/Users/cdj/tmp/RoadRunner/jars/java-cup-11a.jar:",
+            "args": "-noxml -xout=X.log -tool=ST test.Test"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch) - Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-LexScan<RoadRunner>",
+            "request": "launch",
+            "mainClass": "JFlex.LexScan",
+            "projectName": "RoadRunner"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-Main<RoadRunner>",
+            "request": "launch",
+            "mainClass": "JFlex.Main",
+            "projectName": "RoadRunner"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-AllTests<RoadRunner>",
+            "request": "launch",
+            "mainClass": "JFlex.tests.AllTests",
+            "projectName": "RoadRunner"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-CommandLine<RoadRunner>",
+            "request": "launch",
+            "mainClass": "acme.util.option.CommandLine",
+            "projectName": "RoadRunner"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-Main<RoadRunner>(1)",
+            "request": "launch",
+            "mainClass": "java_cup.Main",
+            "projectName": "RoadRunner"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-RRMain<RoadRunner>",
+            "request": "launch",
+            "mainClass": "rr.RRMain",
+            "projectName": "RoadRunner"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-Textifier<RoadRunner>",
+            "request": "launch",
+            "mainClass": "rr.instrument.analysis.Textifier",
+            "projectName": "RoadRunner"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-ClassLoaderTransformer<RoadRunner>",
+            "request": "launch",
+            "mainClass": "rr.loader.ClassLoaderTransformer",
+            "projectName": "RoadRunner"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-MetaDataInfoMain<RoadRunner>",
+            "request": "launch",
+            "mainClass": "rr.meta.MetaDataInfoMain",
+            "projectName": "RoadRunner"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-ASMifier<RoadRunner>",
+            "request": "launch",
+            "mainClass": "rr.org.objectweb.asm.util.ASMifier",
+            "projectName": "RoadRunner"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-CheckClassAdapter<RoadRunner>",
+            "request": "launch",
+            "mainClass": "rr.org.objectweb.asm.util.CheckClassAdapter",
+            "projectName": "RoadRunner"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-Textifier<RoadRunner>(1)",
+            "request": "launch",
+            "mainClass": "rr.org.objectweb.asm.util.Textifier",
+            "projectName": "RoadRunner"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-Processor<RoadRunner>",
+            "request": "launch",
+            "mainClass": "rr.org.objectweb.asm.xml.Processor",
+            "projectName": "RoadRunner"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-RRReplay<RoadRunner>",
+            "request": "launch",
+            "mainClass": "rr.replay.RRReplay",
+            "projectName": "RoadRunner"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-Epoch<RoadRunner>",
+            "request": "launch",
+            "mainClass": "tools.util.Epoch",
+            "projectName": "RoadRunner"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-EpochPair<RoadRunner>",
+            "request": "launch",
+            "mainClass": "tools.util.EpochPair",
+            "projectName": "RoadRunner"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-LongEpoch<RoadRunner>",
+            "request": "launch",
+            "mainClass": "tools.util.LongEpoch",
+            "projectName": "RoadRunner"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-LongVectorClock<RoadRunner>",
+            "request": "launch",
+            "mainClass": "tools.util.LongVectorClock",
+            "projectName": "RoadRunner"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-VectorClock<RoadRunner>",
+            "request": "launch",
+            "mainClass": "tools.util.VectorClock",
+            "projectName": "RoadRunner"
+        }
+    ]
+}

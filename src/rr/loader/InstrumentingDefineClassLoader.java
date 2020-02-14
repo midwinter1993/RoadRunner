@@ -19,7 +19,7 @@ import acme.util.time.TimedExpr;
 
 public class InstrumentingDefineClassLoader implements DefineClassListener {
 
-	public static CommandLineOption<Boolean> sanityOption  = 
+	public static CommandLineOption<Boolean> sanityOption  =
 		CommandLine.makeBoolean("sanity", false, CommandLineOption.Kind.EXPERIMENTAL, "Check whether uninstrumented classes contain synchronization operations that will be ignored.");
 
 	public synchronized byte[] define(ClassLoader definingLoader, final String name, final byte[] bytes)   {
@@ -29,7 +29,7 @@ public class InstrumentingDefineClassLoader implements DefineClassListener {
 		if (rrClass.isSynthetic()) {
 			return bytes;
 		} else {
-			Loader.classes.put(internalName, currentLoader); 
+			Loader.classes.put(internalName, currentLoader);
 			if (!InstrumentationFilter.shouldInstrument(rrClass)) {
 				if (RRMain.slowMode()) Util.log("Skipping " + name + " (Loader=" + Util.objectToIdentityString(definingLoader) + ")");
 				MetaDataBuilder.preLoadFully(currentLoader, bytes);
@@ -40,7 +40,7 @@ public class InstrumentingDefineClassLoader implements DefineClassListener {
 				Loader.writeToFileCache("classes", rrClass.getName(), bytes);
 				Loader.skippedFiles.add(name);
 				return bytes;
-			} else {		
+			} else {
 				Loader.instrumentedFiles.add(name);
 
 				byte[] bytes2 = Loader.readFromFileCache("classes", rrClass.getName());
@@ -55,11 +55,15 @@ public class InstrumentingDefineClassLoader implements DefineClassListener {
 					return bytes2;
 				}
 				try {
-					return Util.eval(new TimedExpr<byte[]>("Instrumenting " + name + " (Loader=" + Util.objectToIdentityString(definingLoader) + ":" + definingLoader.getClass() + ")") {
+					String prompt =  "Instrumenting " + name + " (Loader=" + Util.objectToIdentityString(definingLoader) + ":";
+					if (definingLoader != null) {
+						prompt = prompt + definingLoader.getClass() + ")";
+					}
+					return Util.eval(new TimedExpr<byte[]>(prompt) {
 						@Override
 						public byte[] run() {
 							MetaDataBuilder.preLoadFully(currentLoader, bytes);
-							final ClassWriter instrument = currentLoader.instrument(internalName, bytes); 
+							final ClassWriter instrument = currentLoader.instrument(internalName, bytes);
 							byte[] bytes2 = instrument.toByteArray();
 							Loader.writeToFileCache("classes", rrClass.getName(), bytes2);
 							return bytes2;
@@ -96,9 +100,9 @@ if (rrClass.isSynthetic()) {
 	return bytes;
 } else {
 	System.err.println("MOO5");
-	Loader.classes.put(internalName, currentLoader); 
+	Loader.classes.put(internalName, currentLoader);
 	if (!InstrumentationFilter.shouldInstrument(rrClass)) {
-		//				Util.log("Skipping " + name + " (Loader=" + Util.objectToIdentityString(definingLoader) + ")"); 
+		//				Util.log("Skipping " + name + " (Loader=" + Util.objectToIdentityString(definingLoader) + ")");
 		try {
 			MetaDataBuilder.preLoadFully(currentLoader, bytes);
 		} catch (ClassNotFoundException e) {
@@ -112,7 +116,7 @@ if (rrClass.isSynthetic()) {
 		//				Loader.skippedFiles.add(name);
 		System.err.println("MOO6");
 		return bytes;
-	} else {		
+	} else {
 		System.err.println("MOO7");
 		try {
 			Loader.instrumentedFiles.add(className);
@@ -133,7 +137,7 @@ if (rrClass.isSynthetic()) {
 				public byte[] run() throws ClassNotFoundException {
 					try {
 						MetaDataBuilder.preLoadFully(currentLoader, bytes);
-						final ClassWriter instrument = currentLoader.instrument(internalName, bytes); 
+						final ClassWriter instrument = currentLoader.instrument(internalName, bytes);
 						byte[] bytes2 = instrument.toByteArray();
 						Loader.writeToFileCache("classes", rrClass.getName(), bytes2);
 						return bytes2;

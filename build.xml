@@ -207,7 +207,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		<jar destfile="${jar.dir}/ClassLoaderWithListener.jar" basedir="${classes.dir}"/>
 	</target>
 
-	<!-- <target name="clean-build" depends="clean,wc,compile,jar,agent,javadoc" /> -->
-	<target name="clean-build" depends="compile,jar,agent" />
+    <target name="clean-build" depends="clean,wc,compile,jar,agent" />
+    <!-- <target name="clean-build" depends="clean,wc,compile,jar,agent,javadoc" /> -->
+	<!-- <target name="clean-build" depends="compile,jar,agent" /> -->
 
 </project>

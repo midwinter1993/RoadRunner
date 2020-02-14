@@ -37,14 +37,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
 package test;
-import java.util.concurrent.locks.ReentrantLock;
+// import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 
 
 public class Test extends Thread{
 
     static final int ITERS = 10;
 
-    static ReentrantLock lock = new ReentrantLock();
+    static ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
 	static int y;
 
@@ -57,9 +59,9 @@ public class Test extends Thread{
     }
 
     void bar() {
-        lock.lock();
+        lock.writeLock().lock();
         y++;
-        lock.unlock();
+        lock.writeLock().unlock();
     }
 
     private int abc = 0;

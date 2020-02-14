@@ -70,7 +70,6 @@ final public class SyncTrackTool extends Tool {
 
 	public SyncTrackTool(String name, Tool next, CommandLine commandLine) {
 		super(name, next, commandLine);
-		XLog.logf("FFFFFFFFFFFFFFF");
 	}
 
 	@Override
@@ -84,7 +83,7 @@ final public class SyncTrackTool extends Tool {
 
 	// Does not handle enter/exit, so that the instrumentor won't instrument method invocations.
 	public void enter(MethodEvent me) {
-		Util.printf("XX METHOD %s\n", me.toString());
+		// Util.printf("XX METHOD %s\n", me.toString());
 	}
 
 	public void exit(MethodEvent me) {

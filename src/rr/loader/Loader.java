@@ -1,9 +1,9 @@
 /******************************************************************************
 
 Copyright (c) 2010, Cormac Flanagan (University of California, Santa Cruz)
-                    and Stephen Freund (Williams College) 
+                    and Stephen Freund (Williams College)
 
-All rights reserved.  
+All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -67,6 +67,7 @@ public class Loader {
 
 	public static synchronized LoaderContext get(ClassLoader loader) {
 		if (loader == null) return null;
+		// if (loader == null) return LoaderContext.bootLoaderContext;
 		LoaderContext w = wrappers.get(loader);
 		if (w == null) {
 			w = new LoaderContext(loader);
@@ -149,7 +150,7 @@ public class Loader {
 				fos.close();
 			} catch (Exception e) {
 				Assert.fail(e);
-			} 
+			}
 		}
 	}
 
@@ -167,7 +168,7 @@ public class Loader {
 				return b;
 			} catch (Exception e) {
 				return null;
-			} 
+			}
 		} else {
 			return null;
 		}

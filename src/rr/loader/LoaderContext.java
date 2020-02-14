@@ -1,9 +1,9 @@
 /******************************************************************************
 
 Copyright (c) 2010, Cormac Flanagan (University of California, Santa Cruz)
-                    and Stephen Freund (Williams College) 
+                    and Stephen Freund (Williams College)
 
-All rights reserved.  
+All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -67,7 +67,7 @@ public class LoaderContext {
 
 	protected final ClassLoader loader;
 
-	protected static final URLClassLoader bootLoader = new URLClassLoader(URLUtils.getURLArrayFromString(System.getProperty("user.dir"), System.getProperty("sun.boot.class.path")));
+	protected static final URLClassLoader bootLoader = new URLClassLoader(URLUtils.getURLArrayFromString(System.getProperty("user.dir"), System.getProperty("sun.boot.class.path")+":"+System.getProperty("java.class.path")));
 
 	public static final LoaderContext bootLoaderContext = Loader.get(bootLoader);
 
@@ -102,7 +102,7 @@ public class LoaderContext {
 			url = repositoryLoader.getResource(fileName);
 			if (url == null) {
 				Yikes.yikes("Using repository but failed to find: " + fileName);
-			} 
+			}
 		}
 		return url;
 	}
@@ -245,11 +245,11 @@ public class LoaderContext {
 	}
 
 	public void sanityCheck(ClassReader classReader) {
-		Instrumentor.sanityCheck(this, classReader);	
+		Instrumentor.sanityCheck(this, classReader);
 	}
 
 	@Override
 	public String toString() {
 		return String.format("%X", System.identityHashCode(this.loader));
-	}	
+	}
 }
