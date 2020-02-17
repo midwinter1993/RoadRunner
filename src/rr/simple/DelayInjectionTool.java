@@ -75,7 +75,7 @@ final class MethodCallInfo {
 
 	public String toString() {
 		if (info != null) {
-			return info.toString();
+			return methodInfo + "@" + info.toString();
 		} else {
 			// return "Unknown";
 			return methodInfo;
@@ -122,8 +122,10 @@ final public class DelayInjectionTool extends Tool {
 		Random rand = new Random();
 
 		if (rand.nextInt(100) < 5) {
+			Util.printf("Yeah~~~~~~~~~~~~~~~~");
 			return true;
 		} else {
+			Util.printf("NO~~~~~~~~~~~~~~~~");
 			return false;
 		}
 	}
@@ -133,7 +135,7 @@ final public class DelayInjectionTool extends Tool {
 		try {
 			Util.printf("Trap %s", me.toString());
 			// TimeUnit.SECONDS.sleep(10);
-			Thread.sleep(1000);
+			Thread.sleep(3000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -163,9 +165,9 @@ final public class DelayInjectionTool extends Tool {
 	}
 
 	void onMethodEvent(MethodEvent me) {
-		if (me.getInvokeInfo() != null) {
-			Util.printf(">>> %s", me.getInvokeInfo().toString());
-		}
+		// if (me.getInvokeInfo() != null) {
+			// Util.printf(">>> %s", me.getInvokeInfo().toString());
+		// }
 		if (needTrap()) {
 			threadTrap(me);
 		} else {

@@ -150,6 +150,10 @@ public class InstrumentationFilter {
 	};
 
 	public static boolean shouldInstrument(ClassInfo rrClass) {
+		// String name = rrClass.getKey();
+		// if (name.startsWith("java/util/concurrent/locks") && ! name.contains("$")) {
+			// return true;
+		// }
 		return shouldInstrumentClass.get(rrClass) && toolFilter.shouldInstrument(rrClass);
 	}
 

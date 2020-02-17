@@ -58,7 +58,7 @@ public class Test extends Thread{
         y++;
     }
 
-    void bar() {
+    public void bar(String i, int x, char y, Object z) {
         lock.writeLock().lock();
         y++;
         lock.writeLock().unlock();
@@ -70,18 +70,18 @@ public class Test extends Thread{
 	public void run() {
 		for (int i = 0; i < ITERS; i++) {
 			// inc();
-            bar();
+            bar(null, 1, 'c', null);
             foo();
 		}
 	}
 
 	public static void main(String args[]) throws Exception {
 		final Test t1 = new Test();
-		final Test t2 = new Test();
+		// final Test t2 = new Test();
 		t1.start();
-		t2.start();
+		// t2.start();
 		t1.join();
-		t2.join();
+		// t2.join();
 		System.out.println("Is it " + (ITERS * 2) + "? " + y);
 	}
 }

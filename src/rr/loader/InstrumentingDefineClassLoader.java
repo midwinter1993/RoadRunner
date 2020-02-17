@@ -29,6 +29,7 @@ public class InstrumentingDefineClassLoader implements DefineClassListener {
 		if (rrClass.isSynthetic()) {
 			return bytes;
 		} else {
+				// System.err.println("Define " + name);
 			Loader.classes.put(internalName, currentLoader);
 			if (!InstrumentationFilter.shouldInstrument(rrClass)) {
 				if (RRMain.slowMode()) Util.log("Skipping " + name + " (Loader=" + Util.objectToIdentityString(definingLoader) + ")");

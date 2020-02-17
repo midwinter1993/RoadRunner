@@ -83,7 +83,7 @@ final public class SyncTrackTool extends Tool {
 
 	// Does not handle enter/exit, so that the instrumentor won't instrument method invocations.
 	public void enter(MethodEvent me) {
-		// Util.printf("XX METHOD %s\n", me.toString());
+		// Util.printf("Enter %s\n", me.toString());
 	}
 
 	public void exit(MethodEvent me) {
@@ -92,11 +92,11 @@ final public class SyncTrackTool extends Tool {
 
 	@Override
 	public void acquire(AcquireEvent ae) {
-		XLog.logf("Acq %s", ae.toString());
+		XLog.logf("Acq %s @ %s", ae.toString(), ae.getInfo().getKey());
 	}
 	@Override
 	public void release(ReleaseEvent re) {
-		XLog.logf("Rel %s", re.toString());
+		XLog.logf("Rel %s @ %s", re.toString(), re.getInfo().getKey());
 	}
 	@Override
 	public boolean testAcquire(AcquireEvent ae) { return true; }
@@ -105,7 +105,7 @@ final public class SyncTrackTool extends Tool {
 
 	@Override
 	public void preWait(WaitEvent we) {
-		XLog.logf("Wait %s", we.toString());
+		XLog.logf("Wait %s @ %s", we.toString(), we.getInfo().getKey());
 	}
 
 	@Override
@@ -126,11 +126,11 @@ final public class SyncTrackTool extends Tool {
 
 	@Override
 	public void postJoin(JoinEvent je) {
-		XLog.logf("Join %s", je.toString());
+		XLog.logf("Join %s @ %s", je.toString(), je.getInfo().getKey());
 	}
 	@Override
 	public void preStart(StartEvent se) {
-		XLog.logf("Start %s", se.toString());
+		XLog.logf("Start %s @ %s", se.toString(), se.getInfo().getKey());
 	}
 	@Override
 	public void postStart(StartEvent se) {}

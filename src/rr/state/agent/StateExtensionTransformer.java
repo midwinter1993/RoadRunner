@@ -51,7 +51,21 @@ import acme.util.Util;
 
 public class StateExtensionTransformer implements ClassFileTransformer {
 
-	private DefineClassListener hook;
+	private DefineClassListener hook = new InstrumentingDefineClassLoader();
+
+	public static boolean filter(String className) {
+		// if (className.startsWith("java/util/concurrent/lock")) {
+			// return true;
+		// }
+		if (className.startsWith("rr/") ||
+			className.startsWith("tools/") ||
+			className.startsWith("java/") ||
+			className.startsWith("acme/") ||
+			className.startsWith("sun/")) {
+            return true;
+		}
+		return false;
+	}
 
 	public byte[] transform(ClassLoader definingLoader, String className,
 			Class<?> classBeingRedefined, ProtectionDomain protectionDomain,
@@ -64,7 +78,13 @@ public class StateExtensionTransformer implements ClassFileTransformer {
 			// Util.printf("%s", hook == null ? "hook NULL" : "hook NONNULL");
 		// }
 
-		if (!(className.startsWith("rr/") || className.startsWith("tools/") || className.startsWith("java/") || className.startsWith("acme/") || className.startsWith("sun/"))) {
+		// if (definingLoader != null) {
+			// System.err.println(className + " xx :-P " + definingLoader.toString());
+		// } else {
+			// System.err.println(className + " xx NULL");
+		// }
+
+		if (!filter(className)) {
 			if (hook != null) {
 				return hook.define(definingLoader, className, bytes);
 			}
