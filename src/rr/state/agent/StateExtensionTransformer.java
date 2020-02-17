@@ -49,6 +49,8 @@ import rr.loader.Loader;
 import acme.util.Assert;
 import acme.util.Util;
 
+import rr.instrument.di.InstrTransformer;
+
 public class StateExtensionTransformer implements ClassFileTransformer {
 
 	private DefineClassListener hook = new InstrumentingDefineClassLoader();
@@ -86,7 +88,10 @@ public class StateExtensionTransformer implements ClassFileTransformer {
 
 		if (!filter(className)) {
 			if (hook != null) {
-				return hook.define(definingLoader, className, bytes);
+				byte[] bytes2 = hook.define(definingLoader, className, bytes);
+
+				bytes2 = new InstrTransformer().transform(className, bytes2);
+				return bytes2;
 			}
 		}
 

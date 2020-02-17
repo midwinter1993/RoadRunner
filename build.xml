@@ -122,7 +122,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		<javac srcdir="${src.dir}:${auto.dir}" destdir="${classes.dir}" classpathref="rr.classpath" debug="true">
 			<compilerarg value="-Xbootclasspath/p:${classes.dir}" />
 			<compilerarg value="-XDignore.symbol.file" />
+
+			<classpath>
+				<fileset dir="${rr.basedir}/jars">
+				<include name="javassist.jar" />
+				</fileset>
+			</classpath>
 		</javac>
+
 		<echo file="${classes.dir}/META-INF/services/javax.annotation.processing.Processor" append="false" message="rr.annotations.BuildToolList" />
 		<echo file="${auto.dir}/bin/${run-script}" append="false" message="#!/bin/bash${line.separator}
 								  ${java.home}/bin/java -version ${line.separator}
@@ -168,6 +175,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		<mkdir dir="${jar.dir}" />
 		<mkdir dir="${bin.dir}" />
 		<jar destfile="${jar.dir}/rragent.jar" includes="rr/state/agent/**" basedir="${classes.dir}">
+			<zipgroupfileset dir="${rr.basedir}/jars" includes="javassit.jar" />
 			<manifest>
 				<attribute name="Premain-Class" value="rr.state.agent.ThreadStateExtensionAgent" />
 			</manifest>

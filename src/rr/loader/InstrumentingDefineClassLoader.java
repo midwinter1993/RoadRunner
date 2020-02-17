@@ -17,6 +17,7 @@ import acme.util.option.CommandLine;
 import acme.util.option.CommandLineOption;
 import acme.util.time.TimedExpr;
 
+
 public class InstrumentingDefineClassLoader implements DefineClassListener {
 
 	public static CommandLineOption<Boolean> sanityOption  =
@@ -66,6 +67,7 @@ public class InstrumentingDefineClassLoader implements DefineClassListener {
 							MetaDataBuilder.preLoadFully(currentLoader, bytes);
 							final ClassWriter instrument = currentLoader.instrument(internalName, bytes);
 							byte[] bytes2 = instrument.toByteArray();
+
 							Loader.writeToFileCache("classes", rrClass.getName(), bytes2);
 							return bytes2;
 						}
