@@ -70,7 +70,7 @@ public class InstrTransformer implements ClassFileTransformer {
 
     public byte[] transform(String className, byte[] bytes) {
         try {
-				System.out.println("==============FUCK");
+				// System.out.println("==============FUCK");
 
             return transform(null, className, null, null, bytes);
         } catch (IllegalClassFormatException e) {

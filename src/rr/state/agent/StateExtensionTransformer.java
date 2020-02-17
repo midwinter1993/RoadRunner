@@ -90,7 +90,7 @@ public class StateExtensionTransformer implements ClassFileTransformer {
 			if (hook != null) {
 				byte[] bytes2 = hook.define(definingLoader, className, bytes);
 
-				bytes2 = new InstrTransformer().transform(className, bytes2);
+				// bytes2 = new InstrTransformer().transform(className, bytes2);
 				return bytes2;
 			}
 		}

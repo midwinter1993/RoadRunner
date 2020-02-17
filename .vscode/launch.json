@@ -9,7 +9,7 @@
             "name": "Debug (Launch) - XXX",
             "request": "launch",
             "mainClass": "rr.RRMain",
-            "vmArgs": "-javaagent:/Users/cdj/tmp/RoadRunner/build/jar/rragent.jar -Xmx10g -Xms1g -Xbootclasspath/p:/Users/cdj/tmp/RoadRunner/classes:/Users/cdj/tmp/RoadRunner/jars/java-cup-11a.jar:",
+            "vmArgs": "-javaagent:./build/jar/rragent.jar -Xmx10g -Xms1g -Xbootclasspath/p:./classes:./jars/java-cup-11a.jar:",
             "args": "-noxml -xout=X.log  -tool=ST test.Test"
         },
         {

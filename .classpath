@@ -7,6 +7,6 @@
 	<classpathentry exported="true" kind="lib" path="jars/JFlex.jar"/>
 	<classpathentry exported="true" kind="lib" path="jars/javassist.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="/Library/Java/JavaVirtualMachines/jdk1.8.0_171.jdk/Contents/Home/lib/tools.jar"/>
+	<classpathentry kind="lib" path="/usr/local/java/jdk1.8.0_241/lib/tools.jar"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>

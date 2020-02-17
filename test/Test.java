@@ -50,7 +50,7 @@ public class Test extends Thread{
 
 	static int y;
 
-    public void inc() {
+    synchronized public void inc() {
             y++;
     }
 
@@ -72,6 +72,7 @@ public class Test extends Thread{
 			// inc();
             bar(null, 1, 'c', null);
             foo();
+            inc();
 		}
 	}
 

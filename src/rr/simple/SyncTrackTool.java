@@ -83,7 +83,7 @@ final public class SyncTrackTool extends Tool {
 
 	// Does not handle enter/exit, so that the instrumentor won't instrument method invocations.
 	public void enter(MethodEvent me) {
-		// Util.printf("Enter %s\n", me.toString());
+		Util.printf("Enter %s\n", me.toString());
 	}
 
 	public void exit(MethodEvent me) {

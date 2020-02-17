@@ -31,6 +31,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import acme.util.StringMatchResult;
 import acme.util.Util;
+import acme.util.XLog;
 import acme.util.decorations.Decoration;
 import acme.util.decorations.DefaultValue;
 import acme.util.decorations.DecorationFactory.Type;
@@ -122,10 +123,10 @@ final public class DelayInjectionTool extends Tool {
 		Random rand = new Random();
 
 		if (rand.nextInt(100) < 5) {
-			Util.printf("Yeah~~~~~~~~~~~~~~~~");
+			// Util.printf("Yeah~~~~~~~~~~~~~~~~");
 			return true;
 		} else {
-			Util.printf("NO~~~~~~~~~~~~~~~~");
+			// Util.printf("NO~~~~~~~~~~~~~~~~");
 			return false;
 		}
 	}
@@ -133,15 +134,14 @@ final public class DelayInjectionTool extends Tool {
 	void threadTrap(MethodEvent me) {
 		lastDelayedCall.set(new MethodCallInfo(me));
 		try {
-			Util.printf("Trap %s", me.toString());
-			// TimeUnit.SECONDS.sleep(10);
-			Thread.sleep(3000);
+			// Util.printf("Trap %s", me.toString());
+			Thread.sleep(100); // 0.1 ms
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
-		Util.printf("%s End trap\n", me.toString());
+		XLog.logf("End trap %s %s\n", me.toString(), me.getInvokeInfo().getKey());
 	}
 
 	void mbrInfer(MethodEvent me) {
@@ -159,7 +159,7 @@ final public class DelayInjectionTool extends Tool {
 		}
 
 		if (lastCall.lastDelayedCall != null) {
-			Util.printf("May-HB: %s -> %s\n", lastCall.lastDelayedCall.toString(),
+			XLog.logf("May-HB: %s -> %s\n", lastCall.lastDelayedCall.toString(),
 					lastCall.toString());
 		}
 	}
