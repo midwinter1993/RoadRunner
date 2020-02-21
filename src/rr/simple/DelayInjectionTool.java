@@ -45,6 +45,11 @@ import acme.util.option.CommandLineOption;
  * Use this only for performance tests.
  */
 
+final class MagicNumber {
+	public static long DELAY_TIME_MS = 100;
+	public static int DELAY_PROB = 5;
+}
+
 final class MethodCallInfo {
 	public Instant tsc;
 	public int tid;
@@ -52,6 +57,7 @@ final class MethodCallInfo {
 	// public SourceLocation loc;
 	public MethodCallInfo lastDelayedCall;
 	public String methodInfo;
+	public String stackTrace;
 
 	public MethodCallInfo() {
 		tsc = Instant.now();
@@ -60,10 +66,32 @@ final class MethodCallInfo {
 		info = null;
 		lastDelayedCall = null;
 		methodInfo = null;
+		stackTrace = null;
 	}
 
 	public MethodCallInfo(MethodEvent me) {
 		this(me, null);
+	}
+
+	public static String getStackTrace() {
+		StringBuilder builder = new StringBuilder();
+		StackTraceElement[] stackTraces = Thread.currentThread().getStackTrace();
+
+		for (int i = 1; i < stackTraces.length; ++i) {
+			String currentTrace = stackTraces[i].toString();
+			if (currentTrace.startsWith("rr.") ||
+				currentTrace.contains("__$rr")) {
+				continue;
+			}
+			builder.append(currentTrace);
+			builder.append("\n");
+		}
+		//
+		// Remove the last `\n`
+		//
+		builder.setLength(builder.length() - 1);
+
+		return builder.toString();
 	}
 
 	public MethodCallInfo(MethodEvent me, MethodCallInfo last) {
@@ -72,11 +100,17 @@ final class MethodCallInfo {
 		info = me.getInvokeInfo();
 		lastDelayedCall = last;
 		methodInfo = me.toString();
+
+		stackTrace = getStackTrace();
 	}
 
 	public String toString() {
 		if (info != null) {
-			return methodInfo + "@" + info.toString();
+			return String.format("method info[%s] ; invoke info[%s] ; stack [%s]",
+								 methodInfo,
+								 info.toString(),
+								 stackTrace);
+			// return methodInfo + "@" + info.toString();
 		} else {
 			// return "Unknown";
 			return methodInfo;
@@ -116,32 +150,33 @@ final public class DelayInjectionTool extends Tool {
 		}
 	}
 
-	boolean needTrap() {
+	int randProb() {
+		Random rand = new Random();
+		return rand.nextInt(100);
+	}
+
+	boolean needDelay() {
 		if (numberOfThreads.get() < 2) {
 			return false;
 		}
-		Random rand = new Random();
 
-		if (rand.nextInt(100) < 5) {
-			// Util.printf("Yeah~~~~~~~~~~~~~~~~");
+		if (randProb() < MagicNumber.DELAY_PROB) {
 			return true;
 		} else {
-			// Util.printf("NO~~~~~~~~~~~~~~~~");
 			return false;
 		}
 	}
 
-	void threadTrap(MethodEvent me) {
+	void threadDelay(MethodEvent me) {
 		lastDelayedCall.set(new MethodCallInfo(me));
 		try {
-			// Util.printf("Trap %s", me.toString());
-			Thread.sleep(100); // 0.1 ms
+			Thread.sleep(MagicNumber.DELAY_TIME_MS); // 0.1 ms
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
-		XLog.logf("End trap %s %s\n", me.toString(), me.getInvokeInfo().getKey());
+		// XLog.logf("End trap %s %s\n", me.toString(), me.getInvokeInfo().getKey());
 	}
 
 	void mbrInfer(MethodEvent me) {
@@ -154,13 +189,17 @@ final public class DelayInjectionTool extends Tool {
 		Instant currentTsc = Instant.now();
 		Duration duration = Duration.between(lastCall.tsc, currentTsc);
 
-		if (duration.getSeconds() < 1) {
+		long milliSec = duration.getSeconds() * 1000 + duration.getNano() / 1000000;
+
+		if (milliSec < MagicNumber.DELAY_TIME_MS) {
 			return;
 		}
 
 		if (lastCall.lastDelayedCall != null) {
-			XLog.logf("May-HB: %s -> %s\n", lastCall.lastDelayedCall.toString(),
-					lastCall.toString());
+			Util.printf("May-HB (Delayed %dms): %s -> %s\n",
+						milliSec,
+						lastCall.lastDelayedCall.toString(),
+						lastCall.toString());
 		}
 	}
 
@@ -168,8 +207,11 @@ final public class DelayInjectionTool extends Tool {
 		// if (me.getInvokeInfo() != null) {
 			// Util.printf(">>> %s", me.getInvokeInfo().toString());
 		// }
-		if (needTrap()) {
-			threadTrap(me);
+		if (randProb() < 90) {
+			return;
+		}
+		if (needDelay()) {
+			threadDelay(me);
 		} else {
 			mbrInfer(me);
 		}
@@ -200,6 +242,7 @@ final public class DelayInjectionTool extends Tool {
 	// Does not handle enter/exit, so that the instrumentor won't instrument method
 	// invocations.
 	public void enter(MethodEvent me) {
+		System.out.println(MethodCallInfo.getStackTrace());
 		onMethodEvent(me);
 	}
 
