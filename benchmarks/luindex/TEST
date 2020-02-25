@@ -38,11 +38,11 @@
 TARGET="Main"
 PROGRAM_ARGS=""
 
-echo "PREP"
-cd scratch
-unzip -o luindex.zip
-cd ..
-echo "PREP DONE"
+# echo "PREP"
+# cd scratch
+# unzip -o luindex.zip
+# cd ..
+# echo "PREP DONE"
 
 SPECIAL=""
 

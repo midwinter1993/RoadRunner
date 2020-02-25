@@ -20,6 +20,7 @@ import rr.tool.Tool;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -77,12 +78,17 @@ final class MethodCallInfo {
 		StringBuilder builder = new StringBuilder();
 		StackTraceElement[] stackTraces = Thread.currentThread().getStackTrace();
 
+		int level = 0;
 		for (int i = 1; i < stackTraces.length; ++i) {
 			String currentTrace = stackTraces[i].toString();
 			if (currentTrace.startsWith("rr.") ||
 				currentTrace.contains("__$rr")) {
 				continue;
 			}
+			level += 1;
+
+			builder.append(String.join("", Collections.nCopies(level, " ")));
+			builder.append("-> ");
 			builder.append(currentTrace);
 			builder.append("\n");
 		}
@@ -106,7 +112,7 @@ final class MethodCallInfo {
 
 	public String toString() {
 		if (info != null) {
-			return String.format("method info[%s] ; invoke info[%s] ; stack [%s]",
+			return String.format("method info[%s]\ninvoke info[%s]\nstack info [%s]",
 								 methodInfo,
 								 info.toString(),
 								 stackTrace);
@@ -156,9 +162,6 @@ final public class DelayInjectionTool extends Tool {
 	}
 
 	boolean needDelay() {
-		if (numberOfThreads.get() < 2) {
-			return false;
-		}
 
 		if (randProb() < MagicNumber.DELAY_PROB) {
 			return true;
@@ -168,6 +171,7 @@ final public class DelayInjectionTool extends Tool {
 	}
 
 	void threadDelay(MethodEvent me) {
+		XLog.logf("Delay thread: %s  ", me.toString());
 		lastDelayedCall.set(new MethodCallInfo(me));
 		try {
 			Thread.sleep(MagicNumber.DELAY_TIME_MS); // 0.1 ms
@@ -176,7 +180,7 @@ final public class DelayInjectionTool extends Tool {
 			e.printStackTrace();
 		}
 
-		// XLog.logf("End trap %s %s\n", me.toString(), me.getInvokeInfo().getKey());
+		XLog.logf("Ending delay %s %s\n", me.toString(), me.getInvokeInfo().getKey());
 	}
 
 	void mbrInfer(MethodEvent me) {
@@ -196,7 +200,7 @@ final public class DelayInjectionTool extends Tool {
 		}
 
 		if (lastCall.lastDelayedCall != null) {
-			Util.printf("May-HB (Delayed %dms): %s -> %s\n",
+			Util.printf("===== May-HB (Delayed %dms) =====\n%s\n----------\n%s\n",
 						milliSec,
 						lastCall.lastDelayedCall.toString(),
 						lastCall.toString());
@@ -207,7 +211,11 @@ final public class DelayInjectionTool extends Tool {
 		// if (me.getInvokeInfo() != null) {
 			// Util.printf(">>> %s", me.getInvokeInfo().toString());
 		// }
-		if (randProb() < 90) {
+		if (numberOfThreads.get() < 2) {
+			return;
+		}
+
+		if (randProb() < 70) {
 			return;
 		}
 		if (needDelay()) {
@@ -242,7 +250,7 @@ final public class DelayInjectionTool extends Tool {
 	// Does not handle enter/exit, so that the instrumentor won't instrument method
 	// invocations.
 	public void enter(MethodEvent me) {
-		System.out.println(MethodCallInfo.getStackTrace());
+		// System.out.println(MethodCallInfo.getStackTrace());
 		onMethodEvent(me);
 	}
 
