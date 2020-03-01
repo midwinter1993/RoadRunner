@@ -1,9 +1,9 @@
 /******************************************************************************
 
 Copyright (c) 2016, Cormac Flanagan (University of California, Santa Cruz)
-                    and Stephen Freund (Williams College) 
+                    and Stephen Freund (Williams College)
 
-All rights reserved.  
+All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -95,13 +95,13 @@ import acme.util.option.CommandLine;
  *   - Rephrased rules to:
  *       - include a Read-Shared-Same-Epoch test.
  *       - eliminate an unnecessary update on joins (this was just for the proof).
- *       - remove the Read-Shared to Exclusive transition.  
+ *       - remove the Read-Shared to Exclusive transition.
  *     The last change makes the correctness argument easier and that transition
- *     had little to no performance impact in practice. 
+ *     had little to no performance impact in practice.
  *   - Properly replays events when the fast paths detect an error in all cases.
  *   - Supports long epochs for larger clock values.
  *   - Handles tid reuse more precisely.
- *   
+ *
  * The performance over the JavaGrande and DaCapo benchmarks is more or less
  * identical to the old implementation (within ~1% overall in our tests).
  */
@@ -117,13 +117,13 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 	private final VectorClock maxEpochPerTid = new VectorClock(INIT_VECTOR_CLOCK_SIZE);
 
 	// guarded by classInitTime
-	public static final Decoration<ClassInfo,VectorClock> classInitTime = MetaDataInfoMaps.getClasses().makeDecoration("FastTrack:ClassInitTime", Type.MULTIPLE, 
+	public static final Decoration<ClassInfo,VectorClock> classInitTime = MetaDataInfoMaps.getClasses().makeDecoration("FastTrack:ClassInitTime", Type.MULTIPLE,
 			new DefaultValue<ClassInfo,VectorClock>() {
 		public VectorClock get(ClassInfo st) {
 			return new VectorClock(INIT_VECTOR_CLOCK_SIZE);
 		}
 	});
-	
+
 	public static VectorClock getClassInitTime(ClassInfo ci) {
 		synchronized(classInitTime) {
 			return classInitTime.get(ci);
@@ -139,27 +139,27 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		});
 	}
 
-	/* 
+	/*
 	 * Shadow State:
 	 *   St.E -- epoch decoration on ShadowThread
 	 *          - Thread-local.  Never access from a different thread
-	 *   
+	 *
 	 *   St.V -- VectorClock decoration on ShadowThread
 	 *          - Thread-local while thread is running.
 	 *          - The thread starting t may access st.V before the start.
 	 *          - Any thread joining on t may read st.V after the join.
-	 *   
+	 *
 	 *   Sm.V -- FTLockState decoration on ShadowLock
 	 *          - See FTLockState for synchronization rules.
-	 *   
+	 *
 	 *   Sx.R,Sx.W,Sx.V -- FTVarState objects
 	 *          - See FTVarState for synchronization rules.
-	 *             
+	 *
 	 *   Svx.V -- FTVolatileState decoration on ShadowVolatile  (serves same purpose as L for volatiles)
 	 *          - See FTVolatileState for synchronization rules.
 	 *
-	 *   Sb.V -- FTBarrierState decoration on Barriers 
-	 *          - See FTBarrierState for synchronization rules.   
+	 *   Sb.V -- FTBarrierState decoration on Barriers
+	 *          - See FTBarrierState for synchronization rules.
 	 */
 
 	// invariant: st.E == st.V(st.tid)
@@ -173,6 +173,11 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 	protected void maxAndIncEpochAndCV(ShadowThread st, VectorClock other, OperationInfo info) {
 		final int tid = st.getTid();
 		final VectorClock tV = ts_get_V(st);
+		// =====================
+		if (tV.leq(other)) {
+			// Log
+		}
+		// =====================
 		tV.max(other);
 		tV.tick(tid);
 		ts_set_E(st, tV.get(tid));
@@ -181,6 +186,11 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 	protected void maxEpochAndCV(ShadowThread st, VectorClock other, OperationInfo info) {
 		final int tid = st.getTid();
 		final VectorClock tV = ts_get_V(st);
+		// =====================
+		if (tV.leq(other)) {
+			// Log
+		}
+		// =====================
 		tV.max(other);
 		ts_set_E(st, tV.get(tid));
 	}
@@ -333,7 +343,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 	private static final ThreadLocalCounter wait = new ThreadLocalCounter("FT", "Wait", RR.maxTidOption.get());
 	private static final ThreadLocalCounter vol = new ThreadLocalCounter("FT", "Volatile", RR.maxTidOption.get());
 
-	
+
 	private static final ThreadLocalCounter other = new ThreadLocalCounter("FT", "Other", RR.maxTidOption.get());
 
 	static {
@@ -364,13 +374,13 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 			final int/*epoch*/ w = sx.W;
 			final int wTid = Epoch.tid(w);
 			final int tid = st.getTid();
-			
+
 			if (wTid != tid && !Epoch.leq(w, tV.get(wTid))) {
 				if (COUNT_OPERATIONS) writeReadError.inc(tid);
 				error(event, sx, "Write-Read Race", "Write by ", wTid, "Read by ", tid);
-				// best effort recovery: 
+				// best effort recovery:
 				return;
-			} 
+			}
 
 			if (r != Epoch.READ_SHARED) {
 				final int rTid = Epoch.tid(r);
@@ -379,7 +389,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 					sx.R = e;
 				} else {
 					if (COUNT_OPERATIONS) readShare.inc(tid);
-					int initSize = Math.max(Math.max(rTid,tid), INIT_VECTOR_CLOCK_SIZE); 
+					int initSize = Math.max(Math.max(rTid,tid), INIT_VECTOR_CLOCK_SIZE);
 					sx.makeCV(initSize);
 					sx.set(rTid, r);
 					sx.set(tid, e);
@@ -387,7 +397,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 				}
 			} else {
 				if (COUNT_OPERATIONS) readShared.inc(tid);
-				sx.set(tid, e);					
+				sx.set(tid, e);
 			}
 		}
 	}
@@ -428,7 +438,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 						sx.R = e;
 					} else {
 						if (COUNT_OPERATIONS) readShare.inc(tid);
-						int initSize = Math.max(Math.max(rTid,tid), INIT_VECTOR_CLOCK_SIZE); 
+						int initSize = Math.max(Math.max(rTid,tid), INIT_VECTOR_CLOCK_SIZE);
 						sx.makeCV(initSize);
 						sx.set(rTid, r);
 						sx.set(tid, e);
@@ -436,7 +446,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 					}
 				} else {
 					if (COUNT_OPERATIONS) readShared.inc(tid);
-					sx.set(tid, e);					
+					sx.set(tid, e);
 				}
 				return true;
 			}
@@ -461,7 +471,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 
 		synchronized(sx) {
 			final int/*epoch*/ w = sx.W;
-			final int wTid = Epoch.tid(w);				
+			final int wTid = Epoch.tid(w);
 			final int tid = st.getTid();
 			final VectorClock tV = ts_get_V(st);
 
@@ -469,8 +479,8 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 				if (COUNT_OPERATIONS) writeWriteError.inc(tid);
 				error(event, sx, "Write-Write Race", "Write by ", wTid, "Write by ", tid);
 			}
-			
-			final int/*epoch*/ r = sx.R;				
+
+			final int/*epoch*/ r = sx.R;
 			if (r != Epoch.READ_SHARED) {
 				final int rTid = Epoch.tid(r);
 				if (rTid != tid /* optimization */ && !Epoch.leq(r, tV.get(rTid))) {
@@ -519,7 +529,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 					return false;
 				}
 
-				final int/*epoch*/ r = sx.R;				
+				final int/*epoch*/ r = sx.R;
 				if (r != Epoch.READ_SHARED) {
 					final int rTid = Epoch.tid(r);
 					if (rTid != tid && !Epoch.leq(r, tV.get(rTid))) {
@@ -553,7 +563,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		if (event.isWrite()) {
 			final VectorClock tV = ts_get_V(st);
 			volV.max(tV);
-			incEpochAndCV(st, event.getAccessInfo()); 		
+			incEpochAndCV(st, event.getAccessInfo());
 		} else {
 			maxEpochAndCV(st, volV, event.getAccessInfo());
 		}
@@ -570,13 +580,13 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		final ShadowThread su = event.getNewThread();
 		final VectorClock tV = ts_get_V(st);
 
-		/* 
-		 * Safe to access su.V, because u has not started yet.  
-		 * This will give us exclusive access to it.  There may 
+		/*
+		 * Safe to access su.V, because u has not started yet.
+		 * This will give us exclusive access to it.  There may
 		 * be a race if two or more threads race are starting u, but
 		 * of course, a second attempt to start u will crash...
-		 * 
-		 * RR guarantees that the forked thread will synchronize with 
+		 *
+		 * RR guarantees that the forked thread will synchronize with
 		 * thread t before it does anything else.
 		 */
 		maxAndIncEpochAndCV(su, tV, event.getInfo());
@@ -611,7 +621,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		// no need to inc su's clock here -- that was just for
 		// the proof in the original FastTrack rules.
 
-		super.postJoin(event);	
+		super.postJoin(event);
 		if (COUNT_OPERATIONS) join.inc(st.getTid());
 	}
 
@@ -627,7 +637,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 	}
 
 	@Override
-	public void postWait(WaitEvent event) { 
+	public void postWait(WaitEvent event) {
 		final ShadowThread st = event.getThread();
 		final VectorClock lockV = getV(event.getLock());
 		maxEpochAndCV(st, lockV, event.getInfo()); // we hold lock here
@@ -640,7 +650,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 	}
 
 
-	private final Decoration<ShadowThread, VectorClock> vectorClockForBarrierEntry = 
+	private final Decoration<ShadowThread, VectorClock> vectorClockForBarrierEntry =
 			ShadowThread.makeDecoration("FT:barrier", DecorationFactory.Type.MULTIPLE, new NullDefault<ShadowThread, VectorClock>());
 
 	public void preDoBarrier(BarrierEvent<FTBarrierState> event) {
@@ -718,12 +728,12 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 					aae.getInfo(),
 					"Alloc Site", 		ArrayAllocSiteTracker.get(target),
 					"Shadow State", 	sx,
-					"Current Thread",	toString(st), 
+					"Current Thread",	toString(st),
 					"Array",			Util.objectToIdentityString(target) + "[" + aae.getIndex() + "]",
 					"Message", 			description,
 					"Previous Op",		prevOp + " " + ShadowThread.get(prevTid),
-					"Currrent Op",		curOp + " " + ShadowThread.get(curTid), 
-					"Stack",			ShadowThread.stackDumpForErrorMessage(st)); 
+					"Currrent Op",		curOp + " " + ShadowThread.get(curTid),
+					"Stack",			ShadowThread.stackDumpForErrorMessage(st));
 		}
 		Assert.assertTrue(prevTid != curTid);
 
@@ -743,12 +753,12 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 			fieldErrors.error(st,
 					fd,
 					"Shadow State", 	sx,
-					"Current Thread",	toString(st), 
+					"Current Thread",	toString(st),
 					"Class",			(target==null?fd.getOwner():target.getClass()),
-					"Field",			Util.objectToIdentityString(target) + "." + fd, 
+					"Field",			Util.objectToIdentityString(target) + "." + fd,
 					"Message", 			description,
 					"Previous Op",		prevOp + " " + ShadowThread.get(prevTid),
-					"Currrent Op",		curOp + " " + ShadowThread.get(curTid), 
+					"Currrent Op",		curOp + " " + ShadowThread.get(curTid),
 					"Stack",			ShadowThread.stackDumpForErrorMessage(st));
 		}
 

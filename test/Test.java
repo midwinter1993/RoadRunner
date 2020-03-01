@@ -60,6 +60,7 @@ public class Test extends Thread{
 
     public void bar(String i, int x, char y, Object z) {
         lock.writeLock().lock();
+        foo();
         y++;
         lock.writeLock().unlock();
     }
@@ -78,11 +79,11 @@ public class Test extends Thread{
 
 	public static void main(String args[]) throws Exception {
 		final Test t1 = new Test();
-		// final Test t2 = new Test();
+        final Test t2 = new Test();
 		t1.start();
-		// t2.start();
+        t2.start();
 		t1.join();
-		// t2.join();
+        t2.join();
 		System.out.println("Is it " + (ITERS * 2) + "? " + y);
 	}
 }

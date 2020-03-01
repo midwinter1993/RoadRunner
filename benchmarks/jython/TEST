@@ -52,4 +52,4 @@ echo rrrun ${SPECIAL} -classpath=original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRA
 
 # java -cp original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}
 # java -agentpath:../../delay-injection-ti/x.so -cp original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}
-rrrun ${SPECIAL} -classpath=original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}
+# rrrun ${SPECIAL} -classpath=original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}

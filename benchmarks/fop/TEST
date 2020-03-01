@@ -49,4 +49,4 @@ SPECIAL=" -classes=-org/apache/fop/fonts/CodePointMapping -classes=-org/apache/f
 
 echo rrrun ${SPECIAL} -classpath=original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}
 
-rrrun ${SPECIAL} -classpath=original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}
+# rrrun ${SPECIAL} -classpath=original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}
