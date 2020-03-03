@@ -1,39 +1,33 @@
 /******************************************************************************
-
-Copyright (c) 2016, Cormac Flanagan (University of California, Santa Cruz)
-                    and Stephen Freund (Williams College)
-
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
- * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-
- * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-
- * Neither the names of the University of California, Santa Cruz
-      and Williams College nor the names of its contributors may be
-      used to endorse or promote products derived from this software
-      without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+ *
+ * Copyright (c) 2016, Cormac Flanagan (University of California, Santa Cruz) and Stephen Freund
+ * (Williams College)
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+ *
+ * Redistributions of source code must retain the above copyright notice, this list of conditions
+ * and the following disclaimer.
+ *
+ * Redistributions in binary form must reproduce the above copyright notice, this list of conditions
+ * and the following disclaimer in the documentation and/or other materials provided with the
+ * distribution.
+ *
+ * Neither the names of the University of California, Santa Cruz and Williams College nor the names
+ * of its contributors may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ * FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
+ * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  ******************************************************************************/
 
 
@@ -76,6 +70,7 @@ import tools.util.Epoch;
 import tools.util.VectorClock;
 import acme.util.Assert;
 import acme.util.Util;
+import acme.util.XLog;
 import acme.util.Yikes;
 import acme.util.count.AggregateCounter;
 import acme.util.count.Counter;
@@ -176,6 +171,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		// =====================
 		if (tV.leq(other)) {
 			// Log
+			XLog.logf("HB");
 		}
 		// =====================
 		tV.max(other);
@@ -186,11 +182,6 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 	protected void maxEpochAndCV(ShadowThread st, VectorClock other, OperationInfo info) {
 		final int tid = st.getTid();
 		final VectorClock tV = ts_get_V(st);
-		// =====================
-		if (tV.leq(other)) {
-			// Log
-		}
-		// =====================
 		tV.max(other);
 		ts_set_E(st, tV.get(tid));
 	}
@@ -260,6 +251,9 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		final FTLockState lockV = getV(event.getLock());
 
 		maxEpochAndCV(st, lockV, event.getInfo());
+		// =====================
+		XLog.logf("HB");
+		// =====================
 
 		super.acquire(event);
 		if (COUNT_OPERATIONS) acquire.inc(st.getTid());
@@ -568,6 +562,10 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 			maxEpochAndCV(st, volV, event.getAccessInfo());
 		}
 
+		// =====================
+		XLog.logf("HB");
+		// =====================
+
 		super.volatileAccess(event);
 		if (COUNT_OPERATIONS) vol.inc(st.getTid());
 	}
@@ -591,6 +589,10 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		 */
 		maxAndIncEpochAndCV(su, tV, event.getInfo());
 		incEpochAndCV(st, event.getInfo());
+
+		// =====================
+		XLog.logf("HB");
+		// =====================
 
 		super.preStart(event);
 		if (COUNT_OPERATIONS) fork.inc(st.getTid());
@@ -621,6 +623,10 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		// no need to inc su's clock here -- that was just for
 		// the proof in the original FastTrack rules.
 
+		// =====================
+		XLog.logf("HB");
+		// =====================
+
 		super.postJoin(event);
 		if (COUNT_OPERATIONS) join.inc(st.getTid());
 	}
@@ -641,6 +647,10 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		final ShadowThread st = event.getThread();
 		final VectorClock lockV = getV(event.getLock());
 		maxEpochAndCV(st, lockV, event.getInfo()); // we hold lock here
+		// =====================
+		XLog.logf("HB");
+		// =====================
+
 		super.postWait(event);
 		if (COUNT_OPERATIONS) wait.inc(st.getTid());
 	}
@@ -672,6 +682,10 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 			barrierObj.stopUsingOldVectorClock(barrierV);
 			maxAndIncEpochAndCV(st, barrierV, null);
 		}
+
+		// =====================
+		XLog.logf("HB");
+		// =====================
 		if (COUNT_OPERATIONS) this.barrier.inc(st.getTid());
 	}
 

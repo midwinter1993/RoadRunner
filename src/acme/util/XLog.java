@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.sql.Timestamp;
 import acme.util.io.NamedFileWriter;
 import acme.util.io.SplitOutputWriter;
 import acme.util.option.CommandLine;
@@ -22,6 +23,8 @@ public class XLog {
 								new PrintWriter(
 									XLog.openLogFile(outFile),
 									true));
+
+				out.println(new Timestamp(System.currentTimeMillis()));
 
                 // XLog.out = new SyncPrintWriter(
 				// 				new PrintWriter(

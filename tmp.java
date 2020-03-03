@@ -1,39 +1,33 @@
 /******************************************************************************
-
-Copyright (c) 2016, Cormac Flanagan (University of California, Santa Cruz)
-                    and Stephen Freund (Williams College) 
-
-All rights reserved.  
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
- * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-
- * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-
- * Neither the names of the University of California, Santa Cruz
-      and Williams College nor the names of its contributors may be
-      used to endorse or promote products derived from this software
-      without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+ *
+ * Copyright (c) 2016, Cormac Flanagan (University of California, Santa Cruz) and Stephen Freund
+ * (Williams College)
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+ *
+ * Redistributions of source code must retain the above copyright notice, this list of conditions
+ * and the following disclaimer.
+ *
+ * Redistributions in binary form must reproduce the above copyright notice, this list of conditions
+ * and the following disclaimer in the documentation and/or other materials provided with the
+ * distribution.
+ *
+ * Neither the names of the University of California, Santa Cruz and Williams College nor the names
+ * of its contributors may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ * FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
+ * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  ******************************************************************************/
 
 
@@ -76,6 +70,7 @@ import tools.util.LongEpoch;
 import tools.util.LongVectorClock;
 import acme.util.Assert;
 import acme.util.Util;
+import acme.util.XLog;
 import acme.util.Yikes;
 import acme.util.count.AggregateCounter;
 import acme.util.count.Counter;
@@ -95,13 +90,13 @@ import acme.util.option.CommandLine;
  *   - Rephrased rules to:
  *       - include a Read-Shared-Same-LongEpoch test.
  *       - eliminate an unnecessary update on joins (this was just for the proof).
- *       - remove the Read-Shared to Exclusive transition.  
+ *       - remove the Read-Shared to Exclusive transition.
  *     The last change makes the correctness argument easier and that transition
- *     had little to no performance impact in practice. 
+ *     had little to no performance impact in practice.
  *   - Properly replays events when the fast paths detect an error in all cases.
  *   - Supports long epochs for larger clock values.
  *   - Handles tid reuse more precisely.
- *   
+ *
  * The performance over the JavaGrande and DaCapo benchmarks is more or less
  * identical to the old implementation (within ~1% overall in our tests).
  */
@@ -117,13 +112,13 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 	private final LongVectorClock maxLongEpochPerTid = new LongVectorClock(INIT_VECTOR_CLOCK_SIZE);
 
 	// guarded by classInitTime
-	public static final Decoration<ClassInfo,LongVectorClock> classInitTime = MetaDataInfoMaps.getClasses().makeDecoration("FastTrack:ClassInitTime", Type.MULTIPLE, 
+	public static final Decoration<ClassInfo,LongVectorClock> classInitTime = MetaDataInfoMaps.getClasses().makeDecoration("FastTrack:ClassInitTime", Type.MULTIPLE,
 			new DefaultValue<ClassInfo,LongVectorClock>() {
 		public LongVectorClock get(ClassInfo st) {
 			return new LongVectorClock(INIT_VECTOR_CLOCK_SIZE);
 		}
 	});
-	
+
 	public static LongVectorClock getClassInitTime(ClassInfo ci) {
 		synchronized(classInitTime) {
 			return classInitTime.get(ci);
@@ -139,27 +134,27 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		});
 	}
 
-	/* 
+	/*
 	 * Shadow State:
 	 *   St.E -- epoch decoration on ShadowThread
 	 *          - Thread-local.  Never access from a different thread
-	 *   
+	 *
 	 *   St.V -- LongVectorClock decoration on ShadowThread
 	 *          - Thread-local while thread is running.
 	 *          - The thread starting t may access st.V before the start.
 	 *          - Any thread joining on t may read st.V after the join.
-	 *   
+	 *
 	 *   Sm.V -- FTLockState decoration on ShadowLock
 	 *          - See FTLockState for synchronization rules.
-	 *   
+	 *
 	 *   Sx.R,Sx.W,Sx.V -- FTVarState objects
 	 *          - See FTVarState for synchronization rules.
-	 *             
+	 *
 	 *   Svx.V -- FTVolatileState decoration on ShadowVolatile  (serves same purpose as L for volatiles)
 	 *          - See FTVolatileState for synchronization rules.
 	 *
-	 *   Sb.V -- FTBarrierState decoration on Barriers 
-	 *          - See FTBarrierState for synchronization rules.   
+	 *   Sb.V -- FTBarrierState decoration on Barriers
+	 *          - See FTBarrierState for synchronization rules.
 	 */
 
 	// invariant: st.E == st.V(st.tid)
@@ -173,6 +168,12 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 	protected void maxAndIncLongEpochAndCV(ShadowThread st, LongVectorClock other, OperationInfo info) {
 		final int tid = st.getTid();
 		final LongVectorClock tV = ts_get_V(st);
+		// =====================
+		if (tV.leq(other)) {
+			// Log
+			XLog.logf("HB");
+		}
+		// =====================
 		tV.max(other);
 		tV.tick(tid);
 		ts_set_E(st, tV.get(tid));
@@ -250,6 +251,9 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		final FTLockState lockV = getV(event.getLock());
 
 		maxLongEpochAndCV(st, lockV, event.getInfo());
+		// =====================
+		XLog.logf("HB");
+		// =====================
 
 		super.acquire(event);
 		if (COUNT_OPERATIONS) acquire.inc(st.getTid());
@@ -333,7 +337,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 	private static final ThreadLocalCounter wait = new ThreadLocalCounter("FT", "Wait", RR.maxTidOption.get());
 	private static final ThreadLocalCounter vol = new ThreadLocalCounter("FT", "Volatile", RR.maxTidOption.get());
 
-	
+
 	private static final ThreadLocalCounter other = new ThreadLocalCounter("FT", "Other", RR.maxTidOption.get());
 
 	static {
@@ -364,13 +368,13 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 			final long/*epoch*/ w = sx.W;
 			final int wTid = LongEpoch.tid(w);
 			final int tid = st.getTid();
-			
+
 			if (wTid != tid && !LongEpoch.leq(w, tV.get(wTid))) {
 				if (COUNT_OPERATIONS) writeReadError.inc(tid);
 				error(event, sx, "Write-Read Race", "Write by ", wTid, "Read by ", tid);
-				// best effort recovery: 
+				// best effort recovery:
 				return;
-			} 
+			}
 
 			if (r != LongEpoch.READ_SHARED) {
 				final int rTid = LongEpoch.tid(r);
@@ -379,7 +383,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 					sx.R = e;
 				} else {
 					if (COUNT_OPERATIONS) readShare.inc(tid);
-					int initSize = Math.max(Math.max(rTid,tid), INIT_VECTOR_CLOCK_SIZE); 
+					int initSize = Math.max(Math.max(rTid,tid), INIT_VECTOR_CLOCK_SIZE);
 					sx.makeCV(initSize);
 					sx.set(rTid, r);
 					sx.set(tid, e);
@@ -387,7 +391,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 				}
 			} else {
 				if (COUNT_OPERATIONS) readShared.inc(tid);
-				sx.set(tid, e);					
+				sx.set(tid, e);
 			}
 		}
 	}
@@ -428,7 +432,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 						sx.R = e;
 					} else {
 						if (COUNT_OPERATIONS) readShare.inc(tid);
-						int initSize = Math.max(Math.max(rTid,tid), INIT_VECTOR_CLOCK_SIZE); 
+						int initSize = Math.max(Math.max(rTid,tid), INIT_VECTOR_CLOCK_SIZE);
 						sx.makeCV(initSize);
 						sx.set(rTid, r);
 						sx.set(tid, e);
@@ -436,7 +440,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 					}
 				} else {
 					if (COUNT_OPERATIONS) readShared.inc(tid);
-					sx.set(tid, e);					
+					sx.set(tid, e);
 				}
 				return true;
 			}
@@ -461,7 +465,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 
 		synchronized(sx) {
 			final long/*epoch*/ w = sx.W;
-			final int wTid = LongEpoch.tid(w);				
+			final int wTid = LongEpoch.tid(w);
 			final int tid = st.getTid();
 			final LongVectorClock tV = ts_get_V(st);
 
@@ -469,8 +473,8 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 				if (COUNT_OPERATIONS) writeWriteError.inc(tid);
 				error(event, sx, "Write-Write Race", "Write by ", wTid, "Write by ", tid);
 			}
-			
-			final long/*epoch*/ r = sx.R;				
+
+			final long/*epoch*/ r = sx.R;
 			if (r != LongEpoch.READ_SHARED) {
 				final int rTid = LongEpoch.tid(r);
 				if (rTid != tid /* optimization */ && !LongEpoch.leq(r, tV.get(rTid))) {
@@ -519,7 +523,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 					return false;
 				}
 
-				final long/*epoch*/ r = sx.R;				
+				final long/*epoch*/ r = sx.R;
 				if (r != LongEpoch.READ_SHARED) {
 					final int rTid = LongEpoch.tid(r);
 					if (rTid != tid && !LongEpoch.leq(r, tV.get(rTid))) {
@@ -553,10 +557,14 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		if (event.isWrite()) {
 			final LongVectorClock tV = ts_get_V(st);
 			volV.max(tV);
-			incLongEpochAndCV(st, event.getAccessInfo()); 		
+			incLongEpochAndCV(st, event.getAccessInfo());
 		} else {
 			maxLongEpochAndCV(st, volV, event.getAccessInfo());
 		}
+
+		// =====================
+		XLog.logf("HB");
+		// =====================
 
 		super.volatileAccess(event);
 		if (COUNT_OPERATIONS) vol.inc(st.getTid());
@@ -570,17 +578,21 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		final ShadowThread su = event.getNewThread();
 		final LongVectorClock tV = ts_get_V(st);
 
-		/* 
-		 * Safe to access su.V, because u has not started yet.  
-		 * This will give us exclusive access to it.  There may 
+		/*
+		 * Safe to access su.V, because u has not started yet.
+		 * This will give us exclusive access to it.  There may
 		 * be a race if two or more threads race are starting u, but
 		 * of course, a second attempt to start u will crash...
-		 * 
-		 * RR guarantees that the forked thread will synchronize with 
+		 *
+		 * RR guarantees that the forked thread will synchronize with
 		 * thread t before it does anything else.
 		 */
 		maxAndIncLongEpochAndCV(su, tV, event.getInfo());
 		incLongEpochAndCV(st, event.getInfo());
+
+		// =====================
+		XLog.logf("HB");
+		// =====================
 
 		super.preStart(event);
 		if (COUNT_OPERATIONS) fork.inc(st.getTid());
@@ -611,7 +623,11 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		// no need to inc su's clock here -- that was just for
 		// the proof in the original FastTrack rules.
 
-		super.postJoin(event);	
+		// =====================
+		XLog.logf("HB");
+		// =====================
+
+		super.postJoin(event);
 		if (COUNT_OPERATIONS) join.inc(st.getTid());
 	}
 
@@ -627,10 +643,14 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 	}
 
 	@Override
-	public void postWait(WaitEvent event) { 
+	public void postWait(WaitEvent event) {
 		final ShadowThread st = event.getThread();
 		final LongVectorClock lockV = getV(event.getLock());
 		maxLongEpochAndCV(st, lockV, event.getInfo()); // we hold lock here
+		// =====================
+		XLog.logf("HB");
+		// =====================
+
 		super.postWait(event);
 		if (COUNT_OPERATIONS) wait.inc(st.getTid());
 	}
@@ -640,7 +660,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 	}
 
 
-	private final Decoration<ShadowThread, LongVectorClock> vectorClockForBarrierEntry = 
+	private final Decoration<ShadowThread, LongVectorClock> vectorClockForBarrierEntry =
 			ShadowThread.makeDecoration("FT:barrier", DecorationFactory.Type.MULTIPLE, new NullDefault<ShadowThread, LongVectorClock>());
 
 	public void preDoBarrier(BarrierEvent<FTBarrierState> event) {
@@ -662,6 +682,10 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 			barrierObj.stopUsingOldLongVectorClock(barrierV);
 			maxAndIncLongEpochAndCV(st, barrierV, null);
 		}
+
+		// =====================
+		XLog.logf("HB");
+		// =====================
 		if (COUNT_OPERATIONS) this.barrier.inc(st.getTid());
 	}
 
@@ -718,12 +742,12 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 					aae.getInfo(),
 					"Alloc Site", 		ArrayAllocSiteTracker.get(target),
 					"Shadow State", 	sx,
-					"Current Thread",	toString(st), 
+					"Current Thread",	toString(st),
 					"Array",			Util.objectToIdentityString(target) + "[" + aae.getIndex() + "]",
 					"Message", 			description,
 					"Previous Op",		prevOp + " " + ShadowThread.get(prevTid),
-					"Currrent Op",		curOp + " " + ShadowThread.get(curTid), 
-					"Stack",			ShadowThread.stackDumpForErrorMessage(st)); 
+					"Currrent Op",		curOp + " " + ShadowThread.get(curTid),
+					"Stack",			ShadowThread.stackDumpForErrorMessage(st));
 		}
 		Assert.assertTrue(prevTid != curTid);
 
@@ -743,12 +767,12 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 			fieldErrors.error(st,
 					fd,
 					"Shadow State", 	sx,
-					"Current Thread",	toString(st), 
+					"Current Thread",	toString(st),
 					"Class",			(target==null?fd.getOwner():target.getClass()),
-					"Field",			Util.objectToIdentityString(target) + "." + fd, 
+					"Field",			Util.objectToIdentityString(target) + "." + fd,
 					"Message", 			description,
 					"Previous Op",		prevOp + " " + ShadowThread.get(prevTid),
-					"Currrent Op",		curOp + " " + ShadowThread.get(curTid), 
+					"Currrent Op",		curOp + " " + ShadowThread.get(curTid),
 					"Stack",			ShadowThread.stackDumpForErrorMessage(st));
 		}
 
