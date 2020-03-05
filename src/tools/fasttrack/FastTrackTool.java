@@ -169,11 +169,6 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		final int tid = st.getTid();
 		final VectorClock tV = ts_get_V(st);
 		// =====================
-		if (tV.leq(other)) {
-			// Log
-			XLog.logf("HB");
-		}
-		// =====================
 		tV.max(other);
 		tV.tick(tid);
 		ts_set_E(st, tV.get(tid));
@@ -252,7 +247,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 
 		maxEpochAndCV(st, lockV, event.getInfo());
 		// =====================
-		XLog.logf("HB");
+		XLog.logf("HB: acquire");
 		// =====================
 
 		super.acquire(event);
@@ -563,7 +558,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		}
 
 		// =====================
-		XLog.logf("HB");
+		XLog.logf("HB: volatile");
 		// =====================
 
 		super.volatileAccess(event);
@@ -591,7 +586,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		incEpochAndCV(st, event.getInfo());
 
 		// =====================
-		XLog.logf("HB");
+		XLog.logf("HB: fork");
 		// =====================
 
 		super.preStart(event);
@@ -624,7 +619,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		// the proof in the original FastTrack rules.
 
 		// =====================
-		XLog.logf("HB");
+		XLog.logf("HB: join");
 		// =====================
 
 		super.postJoin(event);
@@ -648,7 +643,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		final VectorClock lockV = getV(event.getLock());
 		maxEpochAndCV(st, lockV, event.getInfo()); // we hold lock here
 		// =====================
-		XLog.logf("HB");
+		XLog.logf("HB: wait");
 		// =====================
 
 		super.postWait(event);
@@ -684,7 +679,7 @@ public class FastTrackTool extends Tool implements BarrierListener<FTBarrierStat
 		}
 
 		// =====================
-		XLog.logf("HB");
+		XLog.logf("HB: barrier");
 		// =====================
 		if (COUNT_OPERATIONS) this.barrier.inc(st.getTid());
 	}
