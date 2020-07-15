@@ -40,33 +40,6 @@ final public class EventLogger extends Tool {
         this.logDir = "litelogs";
     }
 
-    private void startWindowThread() {
-        needLogging.set(false);
-
-        Thread thread = new Thread() {
-            public void run() {
-                while (!stop.get()) {
-                    try {
-                        needLogging.set(true);
-                        Thread.sleep(1000);
-
-                        if (stop.get()) {
-                            break;
-                        }
-
-                        needLogging.set(false);
-                        Thread.sleep(3000);
-
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        };
-
-        thread.start();
-    }
-
     private ArrayList<LogEntry> getThreadLogBuffer() {
         Long tid = $.getTid();
         return threadLogBuffer.computeIfAbsent(tid, k -> new ArrayList<>());
@@ -197,18 +170,12 @@ final public class EventLogger extends Tool {
 
     @Override
 	public void enter(MethodEvent me) {
-        if (!needLogging.get()) {
-            return;
-        }
-
         Object target = me.getTarget();
 
-        //if (isAccessedByMultiThread($.getTid(), target)) {
         getThreadLogBuffer().add(LogEntry.call(target,
                                                "Enter",
                                                me.getInfo().getName(),
                                                null));
-        //}
     }
 
     @Override
@@ -266,10 +233,6 @@ final public class EventLogger extends Tool {
 
     @Override
 	public final void access(AccessEvent ae) {
-        if (!needLogging.get()) {
-            return;
-        }
-
         if (ae.getKind() == Kind.FIELD || ae.getKind() == Kind.VOLATILE) {
             if (ae.isWrite()) {
                 write(ae);
@@ -288,9 +251,6 @@ final public class EventLogger extends Tool {
 
     @Override
 	public void acquire(AcquireEvent ae) {
-        if (!needLogging.get()) {
-            return;
-        }
         getThreadLogBuffer().add(
             LogEntry.monitor(
                 ae.getLock().getLock(),
@@ -302,9 +262,6 @@ final public class EventLogger extends Tool {
 
     @Override
 	public void release(ReleaseEvent re) {
-        if (!needLogging.get()) {
-            return;
-        }
         getThreadLogBuffer().add(
             LogEntry.monitor(
                 re.getLock().getLock(),

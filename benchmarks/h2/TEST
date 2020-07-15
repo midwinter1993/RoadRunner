@@ -38,7 +38,7 @@
 TARGET="Main"
 PROGRAM_ARGS=""
 
-TEST_ARGS="-tool=EL -quiet -noxml"
+TEST_ARGS="-tool=FT2 -quiet -noxml"
 
 SPECIAL=" -maxTid=$[AVAIL_PROCS + 10]"
 
