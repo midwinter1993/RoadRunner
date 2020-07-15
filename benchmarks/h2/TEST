@@ -38,8 +38,12 @@
 TARGET="Main"
 PROGRAM_ARGS=""
 
+TEST_ARGS="-tool=EL -quiet -noxml"
+
 SPECIAL=" -maxTid=$[AVAIL_PROCS + 10]"
 
 echo rrrun ${SPECIAL} -classpath=original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}
 
-# rrrun ${SPECIAL} -classpath=original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}
+time rrrun ${SPECIAL} -classpath=original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}
+
+# time xtracer -log,./litelogs/xlog -cp .:./original.jar Main

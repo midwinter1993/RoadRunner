@@ -50,8 +50,10 @@ public class Test extends Thread{
 
 	static int y;
 
-    synchronized public void inc() {
+    public void inc() {
+        synchronized(this) {
             y++;
+        }
     }
 
     void foo() {
@@ -78,6 +80,7 @@ public class Test extends Thread{
 	}
 
 	public static void main(String args[]) throws Exception {
+        System.out.println("Thread: " + Thread.currentThread().getId());
 		final Test t1 = new Test();
         final Test t2 = new Test();
 		t1.start();

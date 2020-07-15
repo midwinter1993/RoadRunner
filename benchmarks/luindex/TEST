@@ -46,6 +46,11 @@ PROGRAM_ARGS=""
 
 SPECIAL=""
 
-echo rrrun ${SPECIAL} -classpath=original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}
+TEST_ARGS="-tool=EL -quiet -noxml"
 
-rrrun ${SPECIAL} -classpath=original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}
+
+time rrrun ${SPECIAL} -classpath=original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}
+
+# echo "rrrun ${SPECIAL} -classpath=original.jar ${TEST_ARGS} $* ${TARGET} ${PROGRAM_ARGS}"
+
+# time xtracer -log,./litelogs/xlog -cp .:./original.jar Main

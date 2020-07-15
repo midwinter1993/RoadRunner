@@ -119,7 +119,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	<target name="compile" depends="bootstrap-loader,cup,jflex,values,ft">
 		<mkdir dir="${classes.dir}" />
 		<mkdir dir="${auto.dir}/bin" />
-		<javac srcdir="${src.dir}:${auto.dir}" destdir="${classes.dir}" classpathref="rr.classpath" debug="true">
+		<javac target="1.8" includeantruntime="false" srcdir="${src.dir}:${auto.dir}" destdir="${classes.dir}" classpathref="rr.classpath" debug="true">
 			<compilerarg value="-Xbootclasspath/p:${classes.dir}" />
 			<compilerarg value="-XDignore.symbol.file" />
 
@@ -207,8 +207,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 	<target name="bootstrap-loader">
 		<mkdir dir="${classes.dir}"/>
-		<javac srcdir="${src.dir}/acme" destdir="${classes.dir}" debug="true"/>
-		<javac srcdir="${src.dir}" includes="rr/loader/ClassLoaderTransformer.java" destdir="${classes.dir}" debug="true"/>
+		<javac target="1.8" includeantruntime="false" srcdir="${src.dir}/acme" destdir="${classes.dir}" debug="true"/>
+		<javac target="1.8" includeantruntime="false" srcdir="${src.dir}" includes="rr/loader/ClassLoaderTransformer.java" destdir="${classes.dir}" debug="true"/>
 		<java classname="rr.loader.ClassLoaderTransformer" classpath="${classes.dir}"/>
 		<copy file="/tmp/RR_ClassLoader.class" tofile="${classes.dir}/java/lang/ClassLoader.class"/>
 		<mkdir dir="${jar.dir}"/>
